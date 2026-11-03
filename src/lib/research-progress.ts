@@ -1,4 +1,5 @@
 import type { ResearchEvent, ResearchPhase } from "@/lib/schema";
+import { canonicalSourceUrl } from "@/lib/provider-input";
 
 export const researchSteps = [
   {
@@ -74,14 +75,7 @@ export function getResearchProgress(
 }
 
 export function publicEvidenceUrl(value: string | undefined): string | null {
-  if (!value) return null;
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:" || url.username || url.password) return null;
-    return url.toString();
-  } catch {
-    return null;
-  }
+  return value ? canonicalSourceUrl(value) : null;
 }
 
 export function getDiscoveredSources(events: ResearchEvent[]) {

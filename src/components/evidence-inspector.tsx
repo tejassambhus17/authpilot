@@ -3,6 +3,11 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { ArrowUpRight, CircleHelp, FileSearch, X } from "lucide-react";
 import type { Claim, Guide } from "@/lib/schema";
+import {
+  isAuditedFigmaSnapshot,
+  isManualCorrectionClaim,
+  isManualCorrectionSource,
+} from "@/lib/provider-corrections";
 import { EvidenceTag } from "./evidence";
 import styles from "./evidence-inspector.module.css";
 
@@ -33,8 +38,11 @@ export function EvidenceInspector({
     .filter((source) => source !== undefined);
   const evidence = claim.evidence || [];
   const hasMatchedPassage = evidence.some((item) => item.match === "matched");
-  const verificationCaveat =
-    claim.verification?.status === "conflicting"
+  const manualCorrection =
+    isAuditedFigmaSnapshot(guide) && isManualCorrectionClaim(claim);
+  const verificationCaveat = manualCorrection
+    ? "Manual documentation audit; no server-checked quotation or executed OAuth setup. Read the dated amendment and official source."
+    : claim.verification?.status === "conflicting"
       ? "The evidence conflicts. This requirement remains unresolved; compare the source statements before acting."
       : claim.verification?.status === "unsupported"
         ? "The available evidence does not support this claim. Treat it as unresolved."
@@ -76,9 +84,11 @@ export function EvidenceInspector({
               <p>{claim.text}</p>
               <EvidenceTag status={claim.status} />
               <span className={styles.interpretationLabel}>
-                {guide.origin === "researched"
-                  ? "AI interpretation"
-                  : "Guide interpretation"}
+                {manualCorrection
+                  ? "Documentation correction"
+                  : guide.origin === "researched"
+                    ? "AI interpretation"
+                    : "Guide interpretation"}
               </span>
             </section>
 
@@ -104,9 +114,11 @@ export function EvidenceInspector({
               <div className={styles.verificationRow}>
                 <p className={styles.verificationTitle}>
                   <FileSearch size={16} aria-hidden="true" />
-                  {claim.verification
-                    ? verificationLabels[claim.verification.status]
-                    : "Source summary only"}
+                  {manualCorrection
+                    ? "Manual documentation audit"
+                    : claim.verification
+                      ? verificationLabels[claim.verification.status]
+                      : "Source summary only"}
                 </p>
                 {claim.verification && (
                   <p className={styles.timestamp}>
@@ -250,9 +262,12 @@ export function EvidenceInspector({
                       </div>
                     )}
                     <p className={styles.passageLabel}>
-                      {guide.origin === "researched"
-                        ? "AI evidence summary"
-                        : "Guide summary"}{" "}
+                      {isAuditedFigmaSnapshot(guide) &&
+                      isManualCorrectionSource(source)
+                        ? "Documentation audit summary"
+                        : guide.origin === "researched"
+                          ? "AI evidence summary"
+                          : "Guide summary"}{" "}
                       · not a quotation
                     </p>
                     <p>{source.excerpt || "No source summary was retained."}</p>

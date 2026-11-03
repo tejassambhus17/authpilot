@@ -1,4 +1,50 @@
 import { z } from "zod";
+import { isPublicProviderQuery } from "@/lib/provider-input";
+
+export const launchPathSchema = z
+  .object({
+    audience: z.enum(["internal", "public", "unsure"]),
+    intendedApis: z
+      .string()
+      .trim()
+      .max(300)
+      .refine(
+        credentialFreeText,
+        "Remove credentials and secret parameters from intended APIs.",
+      ),
+    scopes: z
+      .string()
+      .trim()
+      .max(300)
+      .refine(
+        credentialFreeText,
+        "Remove credentials and secret parameters from scopes.",
+      ),
+    accountPermissions: z.enum(["admin", "member", "unknown"]),
+    marketplaceListing: z.boolean(),
+  })
+  .strict();
+export type LaunchPath = z.infer<typeof launchPathSchema>;
+export const defaultLaunchPath: LaunchPath = {
+  audience: "unsure",
+  intendedApis: "",
+  scopes: "",
+  accountPermissions: "unknown",
+  marketplaceListing: false,
+};
+const durationEstimateSchema = z
+  .object({
+    minMinutes: z.number().int().min(0).max(10080),
+    maxMinutes: z.number().int().min(0).max(10080),
+  })
+  .strict();
+export const planningSchema = z
+  .object({
+    registration: durationEstimateSchema.nullable(),
+    implementation: durationEstimateSchema.nullable(),
+    assumptions: z.array(z.string().min(1).max(500)).min(1).max(8),
+  })
+  .strict();
 
 export const evidenceStatusSchema = z.enum([
   "source-confirmed",
@@ -89,6 +135,11 @@ export const stepSchema = z
     dependsOn: z.array(z.string()).max(20).optional(),
     sourceIds: z.array(z.string()).max(10).optional(),
     recovery: z.string().max(1500).optional(),
+    recoveryOwner: z.string().max(160).optional(),
+    applicability: z
+      .enum(["all", "internal", "public", "marketplace"])
+      .optional(),
+    requirementType: z.enum(["required", "optional", "conditional"]).optional(),
   })
   .strict();
 export const guideContentSchema = z
@@ -100,6 +151,7 @@ export const guideContentSchema = z
     oauthSupport: z.enum(["supported", "unclear", "unsupported"]),
     difficulty: z.enum(["Straightforward", "Moderate", "Involved", "Unknown"]),
     effort: claimSchema,
+    planning: planningSchema.optional(),
     approval: claimSchema,
     sections: z.array(sectionSchema).length(9),
     checklist: z.array(stepSchema).min(1).max(20),
@@ -128,6 +180,7 @@ const researchClaimSchema = claimSchema
 export const researchGuideContentSchema = guideContentSchema
   .extend({
     effort: researchClaimSchema,
+    planning: planningSchema,
     approval: researchClaimSchema,
     blockers: z.array(researchClaimSchema),
     sections: z
@@ -142,6 +195,9 @@ export const researchGuideContentSchema = guideContentSchema
           dependsOn: z.array(z.string()).max(20),
           sourceIds: z.array(z.string()).max(10),
           recovery: z.string().max(1500),
+          recoveryOwner: z.string().max(160),
+          applicability: z.enum(["all", "internal", "public", "marketplace"]),
+          requirementType: z.enum(["required", "optional", "conditional"]),
         }),
       )
       .min(1)
@@ -154,6 +210,7 @@ export const guideSchema = guideContentSchema
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
     origin: z.enum(["curated", "researched"]),
+    researchContext: launchPathSchema.optional(),
   })
   .strict();
 export type Guide = z.infer<typeof guideSchema>;
@@ -167,10 +224,11 @@ export const checklistStatusSchema = z.enum([
   "in-progress",
   "blocked",
   "completed",
+  "not-applicable",
 ]);
 export type ChecklistStatus = z.infer<typeof checklistStatusSchema>;
 
-function safeProviderInput(value: string): boolean {
+function credentialFreeText(value: string): boolean {
   // Stop common accidental credential pastes before they reach the research service.
   if (
     /(?:\bsk-(?:proj-)?[a-z0-9_-]{12,}|\bxox[baprs]-[a-z0-9-]{10,}|\bgh[pousr]_[a-z0-9_]{15,}|\bgithub_pat_[a-z0-9_]{15,}|\bAIza[a-z0-9_-]{20,}|\bBearer\s+\S+|\beyJ[a-z0-9_-]+\.[a-z0-9_-]+\.[a-z0-9_-]+)/i.test(
@@ -184,6 +242,11 @@ function safeProviderInput(value: string): boolean {
     )
   )
     return false;
+  return true;
+}
+
+function safeProviderInput(value: string): boolean {
+  if (!credentialFreeText(value)) return false;
   if (/^[a-z][a-z0-9+.-]*:\/\//i.test(value) && !/^https?:\/\//i.test(value))
     return false;
   if (/^https?:/i.test(value) || (!/\s/.test(value) && /[@/?#.]/.test(value))) {
@@ -224,7 +287,12 @@ export const researchInputSchema = z
       .refine(
         safeProviderInput,
         "Enter only a provider name or public website. Remove credentials, tokens, and secret parameters.",
+      )
+      .refine(
+        isPublicProviderQuery,
+        "Enter a provider name or public website. Localhost and private-network addresses are not supported.",
       ),
+    launchPath: launchPathSchema.optional(),
   })
   .strict();
 export type ResearchPhase =
@@ -243,9 +311,24 @@ export type ResearchEvent = {
   url?: string;
   guideId?: string;
   code?: string;
+  requestId?: string;
 };
 
 export function validateGuideEvidence(guide: GuideContent): void {
+  if (
+    guide.oauthSupport !== "supported" &&
+    (guide.planning?.registration || guide.planning?.implementation)
+  )
+    throw new Error(
+      "Unestablished OAuth support cannot have executable setup estimates.",
+    );
+  for (const duration of [
+    guide.planning?.registration,
+    guide.planning?.implementation,
+  ]) {
+    if (duration && duration.minMinutes > duration.maxMinutes)
+      throw new Error("Planning estimate minimum cannot exceed its maximum.");
+  }
   const ids = new Set(guide.sources.map((s) => s.id));
   if (ids.size !== guide.sources.length)
     throw new Error("Duplicate source IDs.");

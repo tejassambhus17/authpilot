@@ -133,6 +133,31 @@
   line-height: 1.8;
   margin-top: 10px;
 }
+.requestMeta {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.requestMeta code {
+  color: var(--foreground);
+  font-size: 11px;
+}
+.launchDetails {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.launchDetails > summary {
+  min-height: 32px;
+  color: var(--foreground);
+  font-size: 13px;
+  cursor: pointer;
+}
+.launchDetails[open] > summary {
+  margin-bottom: 16px;
+}
 .formFooter {
   display: flex;
   align-items: flex-start;

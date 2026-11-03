@@ -187,16 +187,94 @@ describe("evidence integrity", () => {
       sourceSchema.safeParse({ ...source, retrievedAt: "yesterday" }).success,
     ).toBe(false);
   });
-  it("limits checklist state to the four supported workflow states", () => {
+  it("limits checklist state to the five supported workflow states", () => {
     for (const status of [
       "not-started",
       "in-progress",
       "blocked",
       "completed",
+      "not-applicable",
     ]) {
       expect(checklistStatusSchema.safeParse(status).success).toBe(true);
     }
     expect(checklistStatusSchema.safeParse("approved").success).toBe(false);
+  });
+  it("rejects inverted planning ranges and executable estimates for unestablished OAuth", () => {
+    const guide = validGuide();
+    guide.planning = {
+      registration: { minMinutes: 60, maxMinutes: 30 },
+      implementation: null,
+      assumptions: ["Test assumption"],
+    };
+    expect(() => validateGuideEvidence(guide)).toThrow(/minimum/i);
+    guide.planning.registration = { minMinutes: 30, maxMinutes: 60 };
+    guide.oauthSupport = "unclear";
+    expect(() => validateGuideEvidence(guide)).toThrow(/unestablished/i);
+  });
+  it("accepts bounded launch preferences and rejects credentials in context", () => {
+    const launchPath = {
+      audience: "internal",
+      intendedApis: "Read files",
+      scopes: "users:read.email files:read",
+      accountPermissions: "member",
+      marketplaceListing: false,
+    };
+    expect(
+      researchInputSchema.safeParse({ query: "Example", launchPath }).success,
+    ).toBe(true);
+    for (const scopes of [
+      "users:read.email",
+      "files:read",
+      "https://www.googleapis.com/auth/drive.readonly",
+    ]) {
+      expect(
+        researchInputSchema.safeParse({
+          query: "Example",
+          launchPath: { ...launchPath, scopes },
+        }).success,
+      ).toBe(true);
+    }
+    expect(
+      researchInputSchema.safeParse({
+        query: "Example",
+        launchPath: {
+          ...launchPath,
+          scopes: "client_secret=not-a-real-secret",
+        },
+      }).success,
+    ).toBe(false);
+    expect(
+      researchInputSchema.safeParse({
+        query: "Example",
+        launchPath: { ...launchPath, intendedApis: "x".repeat(301) },
+      }).success,
+    ).toBe(false);
+  });
+  it("retains server-authored snapshot context only on persisted guides, preserving older snapshots", () => {
+    const context = {
+      audience: "internal" as const,
+      intendedApis: "Read files",
+      scopes: "file_content:read",
+      accountPermissions: "member" as const,
+      marketplaceListing: false,
+    };
+    const storedGuide = { ...seedGuides[0], researchContext: context };
+    expect(guideSchema.parse(storedGuide).researchContext).toEqual(context);
+    const { researchContext: ignored, ...legacy } = storedGuide;
+    expect(ignored).toEqual(context);
+    expect(guideSchema.parse(legacy).researchContext).toBeUndefined();
+    expect(
+      guideContentSchema.safeParse({
+        ...validGuide(),
+        researchContext: context,
+      }).success,
+    ).toBe(false);
+    expect(
+      guideSchema.safeParse({
+        ...storedGuide,
+        researchContext: { ...context, scopes: "client_secret=not-real" },
+      }).success,
+    ).toBe(false);
   });
 });
 

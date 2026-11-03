@@ -9,6 +9,8 @@ import {
 
 // These are documentation-reviewed guides. No provider account or OAuth flow was executed.
 const reviewedAt = "2026-11-03T11:44:54.000Z";
+// Only the refreshed timing sources below use this later retrieval record.
+const timingReviewedAt = "2026-11-03T16:30:40.000Z";
 const confirmed = (text: string, ...sourceIds: string[]): Claim => ({
   text,
   status: "source-confirmed",
@@ -30,7 +32,8 @@ const source = (
   url: string,
   publisher: string,
   excerpt: string,
-): Source => ({ id, title, url, publisher, excerpt, retrievedAt: reviewedAt });
+  retrievedAt = reviewedAt,
+): Source => ({ id, title, url, publisher, excerpt, retrievedAt });
 const section = (
   id: SectionId,
   title: string,
@@ -317,12 +320,12 @@ const slack: Guide = {
   difficulty: "Involved",
   origin: "curated",
   createdAt: reviewedAt,
-  updatedAt: reviewedAt,
+  updatedAt: timingReviewedAt,
   effort: estimate(
     "45–90 minutes for app configuration and one workspace test, assuming an existing OAuth handler. Review preparation and product implementation excluded.",
   ),
   approval: confirmed(
-    "Slack publishes up to 10 business days for preliminary feedback, then up to 10 weeks for new-app functional review. Variable guidance, not a guarantee.",
+    "For Marketplace submissions, Slack publishes preliminary feedback within up to 10 business days, followed by functional review of up to 10 weeks for new apps. Volume and feedback affect the actual wait.",
     "sl-review",
   ),
   sources: [
@@ -345,7 +348,8 @@ const slack: Guide = {
       "Slack Marketplace review process",
       "https://docs.slack.dev/slack-marketplace/slack-marketplace-review-guide/",
       "Slack Developer Docs",
-      "Our review turnaround time can vary depending on volume.",
+      "Published estimates distinguish preliminary feedback from functional review; volume changes turnaround.",
+      timingReviewedAt,
     ),
     source(
       "sl-guidelines",
@@ -467,6 +471,15 @@ const slack: Guide = {
         "Provide a working product, installation access for reviewers, and a demonstration of OAuth and end-to-end behavior. Preliminary and functional reviews are separate stages.",
         "sl-review",
       ),
+      {
+        ...confirmed(
+          "Marketplace timing guidance: preliminary feedback up to 10 business days; functional review up to 10 weeks for new submissions or 6 weeks for published-app updates. Volume, required changes, and resubmission can extend the wait; check app settings before launch.",
+          "sl-review",
+        ),
+        conditions: [
+          "Slack Marketplace submission, not an internal workspace installation or workspace administrator consent.",
+        ],
+      },
       confirmed(
         "Current guidance requires 10 active workspace installations throughout review. The November 2 update defines low usage using fewer than 10 active workspaces and fewer than 20 monthly active users; inspect your submission console.",
         "sl-changelog",
@@ -592,12 +605,12 @@ const google: Guide = {
   difficulty: "Moderate",
   origin: "curated",
   createdAt: reviewedAt,
-  updatedAt: reviewedAt,
+  updatedAt: timingReviewedAt,
   effort: estimate(
     "45–90 minutes for consent and client configuration with a working callback. Verification materials, implementation, legal work, and assessment excluded.",
   ),
   approval: unknown(
-    "Scope review and any security assessment depend on the app. Official branding timing descriptions differ; no reliable total approval delay is established.",
+    "Branding automation usually takes minutes; manual fallback usually takes 2–3 business days. Scope verification and security assessment are separate. Your total approval delay remains unknown.",
     "go-brand",
     "go-sensitive",
   ),
@@ -647,9 +660,10 @@ const google: Guide = {
     source(
       "go-brand",
       "Submit for brand verification",
-      "https://developers.google.com/identity/protocols/oauth2/production-readiness/brand-verification",
+      "https://developers.google.com/identity/verification/authentication-verification",
       "Google for Developers",
-      "The brand verification process typically takes 2-3 business days after submission.",
+      "Automated branding typically completes in minutes; unresolved cases can require manual review, usually 2–3 business days.",
+      timingReviewedAt,
     ),
   ],
   sections: [
@@ -747,11 +761,15 @@ const google: Guide = {
         "Restricted data accessed through a server can add a security assessment requirement unless an exception applies. Confirm permitted use before building around the scope.",
         "go-restricted",
       ),
-      unknown(
-        "Google describes branding evaluation as automated in one procedure and typically 2–3 business days on its brand page. Neither establishes total scope-review time.",
-        "go-sensitive",
-        "go-brand",
-      ),
+      {
+        ...confirmed(
+          "Google's branding review has two branches: automated checks usually finish in minutes; when automation cannot determine a result, manual review usually takes 2–3 business days. These are typical branding waits, not total sensitive/restricted-scope approval or assessment times.",
+          "go-brand",
+        ),
+        conditions: [
+          "Brand verification for the configured app; scope verification, security assessments, and tenant administrator decisions have separate applicability and waits.",
+        ],
+      },
     ),
     section(
       "distribution",
@@ -856,8 +874,212 @@ const google: Guide = {
   ],
 };
 
+type ChecklistDetails = Required<
+  Pick<
+    Guide["checklist"][number],
+    | "dependsOn"
+    | "sourceIds"
+    | "recovery"
+    | "recoveryOwner"
+    | "applicability"
+    | "requirementType"
+  >
+>;
+const details = (
+  dependsOn: string[],
+  sourceIds: string[],
+  recovery: string,
+  recoveryOwner = "Integration developer",
+  applicability: ChecklistDetails["applicability"] = "all",
+  requirementType: ChecklistDetails["requirementType"] = "required",
+): ChecklistDetails => ({
+  dependsOn,
+  sourceIds,
+  recovery,
+  recoveryOwner,
+  applicability,
+  requirementType,
+});
+
+// Explicit planning relationships, not claims that a particular reader is blocked.
+// Recovery instructions are suggested actions grounded in the linked step docs.
+const checklistDetails: Record<string, ChecklistDetails> = {
+  "gh-model": details(
+    [],
+    ["gh-create"],
+    "Compare the two app models against your required repository access before registering. Ask the product owner which resources and users must be supported.",
+  ),
+  "gh-register": details(
+    ["gh-model"],
+    ["gh-create"],
+    "Sign in to the intended owning account and open Settings → Developer settings → OAuth Apps. If you cannot register under the organization, ask its administrator to confirm ownership and registration permissions.",
+    "Developer and organization administrator",
+  ),
+  "gh-scope": details(
+    ["gh-model"],
+    ["gh-scopes"],
+    "Map one intended API call to its documented scope, then remove permissions unrelated to a feature. This planning can continue while registration permissions are being resolved.",
+  ),
+  "gh-callback": details(
+    ["gh-register", "gh-scope"],
+    ["gh-create", "gh-auth"],
+    "Compare the callback sent by your running handler with the registered URL; implement state validation and the documented S256 PKCE flow before retrying.",
+  ),
+  "gh-secret": details(
+    ["gh-register"],
+    ["gh-create", "gh-auth"],
+    "Retrieve credentials from the registered app as its owner and configure your server environment. If access is denied, ask the app owner; never paste credentials into AuthPilot.",
+    "Developer and app owner",
+  ),
+  "gh-test": details(
+    ["gh-callback", "gh-secret"],
+    ["gh-auth", "gh-user"],
+    "Test with a dedicated personal account first. Inspect the callback error and requested scopes, then call the documented authenticated-user endpoint; organization access is a separate check.",
+  ),
+  "gh-request": details(
+    ["gh-register"],
+    ["gh-org", "gh-user-auth"],
+    "Use the organization access request in the authorization/settings flow and send the app identity, needed scopes, and business reason to an organization owner. Continue personal-account testing and scope planning while waiting.",
+    "Developer requests; organization owner decides",
+    "all",
+    "conditional",
+  ),
+  "gh-owner": details(
+    ["gh-request"],
+    ["gh-org"],
+    "Ask an organization owner to inspect the pending OAuth app request and approve or deny it according to policy. Check the user's SAML session separately; a personal token does not override an owner decision.",
+    "Organization owner",
+    "all",
+    "conditional",
+  ),
+  "sl-workspace": details(
+    [],
+    ["sl-quickstart"],
+    "Choose a workspace where you may develop and install apps, or follow the documented developer-sandbox route. Ask the workspace administrator when app creation is restricted.",
+    "Developer and workspace administrator",
+  ),
+  "sl-register": details(
+    ["sl-workspace"],
+    ["sl-quickstart"],
+    "Open Slack app management in the intended development workspace. Confirm you are signed into the right workspace before creating an app.",
+  ),
+  "sl-scope": details(
+    [],
+    ["sl-oauth"],
+    "List the methods your feature needs and map bot versus user permissions. Keep Sign in with Slack separate; scope planning can proceed while workspace access is resolved.",
+  ),
+  "sl-redirect": details(
+    ["sl-register"],
+    ["sl-oauth"],
+    "Register a controlled HTTPS callback under OAuth & Permissions and compare it with both authorization and token-exchange redirect_uri values.",
+  ),
+  "sl-test": details(
+    ["sl-scope", "sl-redirect"],
+    ["sl-oauth", "sl-test"],
+    "Inspect installation denial and missing-scope errors; confirm workspace policy with its administrator. After authorization, check auth.test identity and exercise the actual feature with the granted token.",
+    "Developer and workspace administrator",
+  ),
+  "sl-pilot": details(
+    ["sl-test"],
+    ["sl-distribution", "sl-terms"],
+    "Complete Manage Distribution for a development/pilot install. Confirm the terms for your use case; an unlisted pilot is not an exemption for commercial distribution.",
+    "Integration developer",
+    "public",
+    "conditional",
+  ),
+  "sl-materials": details(
+    [],
+    ["sl-review", "sl-guidelines", "sl-changelog", "sl-terms"],
+    "For commercial distribution, plan the required Marketplace path; noncommercial pilots need their own terms check. Gather usage evidence, policies, reviewer access, and an OAuth demo while installation is being debugged.",
+    "Developer and product owner",
+    "public",
+    "conditional",
+  ),
+  "sl-submit": details(
+    ["sl-test", "sl-materials"],
+    ["sl-review", "sl-terms"],
+    "When the Marketplace path applies, resolve readiness checks and provide a working reviewer installation before submitting. Commercial distribution cannot skip this path by choosing an unlisted link. Recheck the app settings queue estimate.",
+    "Integration developer",
+    "public",
+    "conditional",
+  ),
+  "sl-approval": details(
+    ["sl-submit"],
+    ["sl-review", "sl-terms"],
+    "When Marketplace approval is needed, track review in app settings and reply to Slack's requested changes. No local action can grant or accelerate Slack's decision. A noncommercial pilot is a separate conditional route.",
+    "Slack Marketplace reviewer; developer replies",
+    "public",
+    "conditional",
+  ),
+  "go-audience": details(
+    [],
+    ["go-config", "go-state"],
+    "Confirm the owning Cloud project, intended audience, APIs, and client type with the project owner. Internal audience requires the appropriate organization context.",
+    "Developer and Cloud project owner",
+  ),
+  "go-consent": details(
+    ["go-audience"],
+    ["go-config"],
+    "Select the intended Cloud project and fill Branding, Audience, and Data Access. If controls are unavailable, ask the project administrator to check your permissions and organization policy.",
+    "Developer and Cloud project administrator",
+  ),
+  "go-client": details(
+    ["go-consent"],
+    ["go-oauth"],
+    "Select the client type for your actual platform, then create credentials in the intended project. Have the project administrator resolve access restrictions; do not share client secrets here.",
+    "Developer and Cloud project administrator",
+  ),
+  "go-callback": details(
+    ["go-client"],
+    ["go-web"],
+    "Compare the full runtime redirect URI against the authorized URI, including scheme, case, and trailing slash. Save the corrected URI before requesting a new code.",
+  ),
+  "go-test": details(
+    ["go-callback"],
+    ["go-state", "go-web"],
+    "Check the selected account, external-testing allowlist where applicable, audience, and requested scopes. Ask the customer's Workspace administrator about a policy denial.",
+    "Developer and customer Workspace administrator",
+  ),
+  "go-assess": details(
+    ["go-audience"],
+    ["go-sensitive", "go-restricted"],
+    "Classify the actual requested scopes and check documented exceptions. Ask the product/security owner whether restricted data reaches your server; this assessment can proceed while client setup is blocked.",
+    "Developer and product/security owner",
+  ),
+  "go-materials": details(
+    ["go-assess"],
+    ["go-brand", "go-sensitive"],
+    "If verification applies, verify domain ownership, publish accurate app/privacy pages, justify scopes, and record the working consent/features demonstration. Record an applicable exception before marking this step not applicable.",
+    "Developer and domain/product owner",
+    "all",
+    "conditional",
+  ),
+  "go-review": details(
+    ["go-materials"],
+    ["go-brand", "go-sensitive", "go-restricted"],
+    "Read Google's review thread and respond with the requested evidence or corrections. Keep branding, scope review, and any security assessment separate; only Google can issue its approval.",
+    "Google reviewer; developer replies",
+    "all",
+    "conditional",
+  ),
+  "go-publish": details(
+    ["go-test", "go-assess"],
+    ["go-state"],
+    "Confirm applicable verification and audience restrictions before production use, then test with an external customer tenant. Ask its Workspace administrator about blocked access; production publishing does not override that policy.",
+    "Developer and customer Workspace administrator",
+    "public",
+    "conditional",
+  ),
+};
+
 export const seedGuides: Guide[] = [github, slack, google].map((guide) => {
-  const parsed = guideSchema.parse(guide);
+  const parsed = guideSchema.parse({
+    ...guide,
+    checklist: guide.checklist.map((step) => ({
+      ...step,
+      ...checklistDetails[step.id],
+    })),
+  });
   validateGuideEvidence(parsed);
   return parsed;
 });

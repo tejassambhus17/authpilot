@@ -26,15 +26,25 @@ import {
 import { useEffect, useRef, useState } from "react";
 import {
   checklistStatusSchema,
+  defaultLaunchPath,
+  launchPathSchema,
   type ChecklistStatus,
   type Claim,
   type Guide,
+  type LaunchPath,
   type SectionId,
 } from "@/lib/schema";
 import { ProviderIcon } from "./brand";
+import { isAuditedFigmaPlanningSnapshot } from "@/lib/provider-corrections";
 import { EvidenceTag } from "./evidence";
 import { SaveGuideButton } from "./save-guide-button";
 import { EvidenceInspector } from "./evidence-inspector";
+import { LaunchPathFields } from "./launch-path-fields";
+import {
+  formatDuration,
+  getPlanningEstimate,
+  getStepApplicability,
+} from "@/lib/launch-path";
 import {
   getGuideNextStep,
   getStepDependencies,
@@ -56,7 +66,10 @@ const statuses: { value: ChecklistStatus; label: string }[] = [
   { value: "in-progress", label: "In progress" },
   { value: "blocked", label: "Blocked" },
   { value: "completed", label: "Completed" },
+  { value: "not-applicable", label: "Not applicable" },
 ];
+type BlockerNote = { reason: string; owner: string };
+type BlockerNotes = Record<string, BlockerNote>;
 const setupSections: SectionId[] = [
   "prerequisites",
   "registration",
@@ -128,11 +141,76 @@ function GuideSections({ guide, ids }: { guide: Guide; ids: SectionId[] }) {
   );
 }
 
+function ResearchSnapshotContext({ guide }: { guide: Guide }) {
+  const context = guide.researchContext;
+  return (
+    <section
+      className={styles.snapshotContext}
+      aria-label="Research snapshot context"
+    >
+      <h3>Research snapshot context</h3>
+      {context ? (
+        <dl>
+          <div>
+            <dt>Audience</dt>
+            <dd>
+              {context.audience === "internal"
+                ? "Internal / own organization"
+                : context.audience === "public"
+                  ? "Public / external users"
+                  : "Undecided"}
+            </dd>
+          </div>
+          <div>
+            <dt>Intended APIs</dt>
+            <dd>{context.intendedApis || "Not specified"}</dd>
+          </div>
+          <div>
+            <dt>Scopes investigated</dt>
+            <dd>{context.scopes || "Not specified"}</dd>
+          </div>
+          <div>
+            <dt>Declared permissions</dt>
+            <dd>
+              {context.accountPermissions === "admin"
+                ? "Owner / administrator"
+                : context.accountPermissions === "member"
+                  ? "Member / needs an administrator"
+                  : "Not checked"}
+            </dd>
+          </div>
+          <div>
+            <dt>Optional listing</dt>
+            <dd>
+              {context.marketplaceListing
+                ? "Included in research"
+                : "Not requested"}
+            </dd>
+          </div>
+        </dl>
+      ) : (
+        <p>
+          This older snapshot has no recorded launch context. Check each
+          requirement’s conditions before applying it to your integration.
+        </p>
+      )}
+      <p>
+        Changing preferences does not research missing requirements. Research
+        again for another launch path. Declared account permissions are user
+        input, not verified access.
+      </p>
+    </section>
+  );
+}
+
 type ChecklistProps = {
   guide: Guide;
   progress: Record<string, ChecklistStatus>;
   ready: boolean;
   compact?: boolean;
+  launchPath: LaunchPath;
+  blockers: BlockerNotes;
+  onBlockerChange: (id: string, note: BlockerNote) => void;
   onChange: (id: string, status: ChecklistStatus) => void;
   onRead: (sectionId: SectionId) => void;
 };
@@ -142,10 +220,18 @@ function Checklist({
   progress,
   ready,
   compact = false,
+  launchPath,
+  blockers,
+  onBlockerChange,
   onChange,
   onRead,
 }: ChecklistProps) {
-  const done = guide.checklist.filter(
+  const applicable = guide.checklist.filter(
+    (step) =>
+      !getStepApplicability(step, launchPath).excluded &&
+      progress[step.id] !== "not-applicable",
+  );
+  const done = applicable.filter(
     (step) => progress[step.id] === "completed",
   ).length;
   return (
@@ -159,7 +245,7 @@ function Checklist({
           Setup checklist
         </h2>
         <span>
-          {done} / {guide.checklist.length} completed
+          {done} / {applicable.length} completed
         </span>
       </div>
       <div
@@ -167,24 +253,29 @@ function Checklist({
         role="progressbar"
         aria-label="Checklist completion"
         aria-valuemin={0}
-        aria-valuemax={guide.checklist.length}
+        aria-valuemax={applicable.length || 1}
         aria-valuenow={done}
       >
         <span
-          style={{ transform: `scaleX(${done / guide.checklist.length})` }}
+          style={{
+            transform: `scaleX(${applicable.length ? done / applicable.length : 0})`,
+          }}
         />
       </div>
       <ol className={styles.checklistItems} aria-label="Checklist steps">
         {guide.checklist.map((step) => {
-          const status = progress[step.id] || "not-started";
+          const applicability = getStepApplicability(step, launchPath);
+          const status = applicability.excluded
+            ? "not-applicable"
+            : progress[step.id] || "not-started";
+          const note = blockers[step.id] || { reason: "", owner: "" };
           const { dependencies, inferredOrder } = getStepDependencies(
             guide.checklist,
             step,
             progress,
+            launchPath,
           );
-          const unmet = dependencies.filter(
-            (item) => item.status !== "completed",
-          );
+          const unmet = dependencies.filter((item) => !item.satisfied);
           const documentation = getStepDocumentation(guide, step);
           return (
             <li className={styles.checklistItem} key={step.id}>
@@ -194,7 +285,11 @@ function Checklist({
                 <input
                   type="checkbox"
                   checked={status === "completed"}
-                  disabled={!ready}
+                  disabled={
+                    !ready ||
+                    applicability.excluded ||
+                    status === "not-applicable"
+                  }
                   aria-label={`Mark ${step.title} complete`}
                   onChange={(e) =>
                     onChange(
@@ -208,12 +303,69 @@ function Checklist({
               {!compact && (
                 <p className={styles.stepDescription}>{step.description}</p>
               )}
+              {applicability.excluded && (
+                <p className={styles.dependencyNote}>
+                  {applicability.reason} Excluded from your completion count;
+                  change Your launch path to include it.
+                </p>
+              )}
+              {!compact &&
+                status === "not-applicable" &&
+                !applicability.excluded && (
+                  <p className={styles.dependencyNote}>
+                    You marked this step not applicable. This does not satisfy a
+                    required prerequisite for another step. Confirm the
+                    documented conditions before omitting it.
+                  </p>
+                )}
               {!compact && status === "blocked" && (
                 <div className={styles.stepRecovery}>
                   <strong>Blocked — resolve before continuing</strong>
+                  <label className={styles.blockerField}>
+                    What is blocking this step?
+                    <textarea
+                      aria-label={`Blocker reason for ${step.title}`}
+                      maxLength={500}
+                      value={note.reason}
+                      placeholder="Record the missing permission, decision, or prerequisite. No secrets."
+                      onChange={(e) =>
+                        onBlockerChange(step.id, {
+                          ...note,
+                          reason: e.target.value,
+                        })
+                      }
+                    />
+                  </label>
+                  <label className={styles.blockerField}>
+                    Responsible person or role
+                    <input
+                      aria-label={`Blocker owner for ${step.title}`}
+                      maxLength={120}
+                      value={note.owner}
+                      placeholder={
+                        step.recoveryOwner ||
+                        "e.g. your organization administrator"
+                      }
+                      onChange={(e) =>
+                        onBlockerChange(step.id, {
+                          ...note,
+                          owner: e.target.value,
+                        })
+                      }
+                    />
+                  </label>
                   <p>
                     {step.recovery ||
                       "You marked this task blocked; its specific reason was not recorded. Review the guidance and documentation, resolve the prerequisite, then update the status when you can continue."}
+                  </p>
+                  <p>
+                    Recovery owner:{" "}
+                    {note.owner ||
+                      step.recoveryOwner ||
+                      (step.actor === "provider"
+                        ? "Provider decision-maker"
+                        : "Developer / relevant account owner")}
+                    . Your reason and owner stay in this browser.
                   </p>
                 </div>
               )}
@@ -234,7 +386,7 @@ function Checklist({
               <div className={styles.stepControls}>
                 <select
                   className={styles.statusSelect}
-                  disabled={!ready}
+                  disabled={!ready || applicability.excluded}
                   aria-label={`Status for ${step.title}`}
                   value={status}
                   onChange={(e) =>
@@ -291,6 +443,9 @@ function Checklist({
       {compact && (
         <p className={styles.personalNote}>
           Progress is saved in this browser, just for you.
+          {guide.checklist.length - applicable.length > 0
+            ? ` ${guide.checklist.length - applicable.length} steps omitted; inspect Setup steps for conditions.`
+            : ""}
         </p>
       )}
     </section>
@@ -302,18 +457,27 @@ function NextStepPanel({
   progress,
   ready,
   onRead,
+  launchPath,
+  blockers,
 }: {
   guide: Guide;
   progress: Record<string, ChecklistStatus>;
   ready: boolean;
   onRead: (section: SectionId) => void;
+  launchPath: LaunchPath;
+  blockers: BlockerNotes;
 }) {
-  const next = getGuideNextStep(guide, progress);
+  const next = getGuideNextStep(guide, progress, launchPath);
   const step = next.step;
   const docs = step ? getStepDocumentation(guide, step) : null;
   const otherBlockers = next.blockedSteps.filter(
     (blocked) =>
       blocked.id !== (next.kind === "blocked" ? step?.id : undefined),
+  );
+  const manuallyOmitted = guide.checklist.filter(
+    (item) =>
+      progress[item.id] === "not-applicable" &&
+      !getStepApplicability(item, launchPath).excluded,
   );
   return (
     <section
@@ -350,16 +514,38 @@ function NextStepPanel({
                 : step?.description ||
                   (next.supportUnestablished
                     ? "Checklist completion does not establish OAuth support. Review official support for your use case before implementing an integration."
-                    : "Your checklist is complete. Review your real integration and the current provider requirements before launch.")}
+                    : "Your selected plan has no remaining tasks. Review completed and omitted steps against the current provider requirements before launch.")}
           </p>
+          {manuallyOmitted.length > 0 && (
+            <p className={styles.navigationNote}>
+              {manuallyOmitted.length}{" "}
+              {manuallyOmitted.length === 1 ? "step was" : "steps were"}{" "}
+              manually marked not applicable. Omission does not mean setup was
+              completed or a provider requirement was waived. Review these
+              choices in Setup steps.
+            </p>
+          )}
           {next.kind === "blocked" && step && (
             <div className={styles.recoveryInstructions}>
               <h4>Recovery</h4>
+              {blockers[step.id]?.reason && (
+                <p>
+                  <strong>Your blocker:</strong> {blockers[step.id].reason}
+                </p>
+              )}
               <p>
                 {next.supportRestricted
                   ? "Verify in official documentation or with the provider that OAuth is available for your intended integration. Do not register an app, configure credentials or redirects, choose scopes, or execute a flow until support is established. If OAuth is unavailable, investigate a supported alternative. Your personal checklist status has not been changed."
                   : step.recovery ||
                     "The specific blocker reason was not recorded in this guide. Review this step’s guidance, identify the missing prerequisite or permission, and resolve it with the appropriate account owner or provider. Update the checklist when you can continue."}
+              </p>
+              <p>
+                <strong>Responsible:</strong>{" "}
+                {blockers[step.id]?.owner ||
+                  step.recoveryOwner ||
+                  (step.actor === "provider"
+                    ? "Provider decision-maker"
+                    : "Developer / relevant account owner")}
               </p>
             </div>
           )}
@@ -373,7 +559,7 @@ function NextStepPanel({
               <summary>
                 {next.unmetDependencies.length
                   ? "Unmet dependencies"
-                  : "Dependencies completed"}
+                  : "Dependencies satisfied"}
               </summary>
               <ul>
                 {next.dependencies.map((dependency) => (
@@ -480,6 +666,28 @@ function NextStepPanel({
               </p>
             </details>
           )}
+          {next.actionableSteps.length > 1 && (
+            <details className={styles.dependencyDetails}>
+              <summary>Other steps you can continue</summary>
+              <ul>
+                {next.actionableSteps.slice(1).map((item) => (
+                  <li key={item.id}>
+                    <button
+                      className={styles.inlineAction}
+                      onClick={() => onRead(item.sectionId)}
+                    >
+                      {item.title}
+                      <ArrowRight size={12} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <p className={styles.navigationNote}>
+                These steps have no unresolved recorded dependencies. Account
+                eligibility and documented conditions still apply.
+              </p>
+            </details>
+          )}
         </>
       )}
     </section>
@@ -492,14 +700,45 @@ export function GuideView({ guide }: { guide: Guide }) {
   const [storageReady, setStorageReady] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [storageError, setStorageError] = useState("");
+  const [launchPath, setLaunchPath] = useState<LaunchPath>(
+    guide.researchContext ?? defaultLaunchPath,
+  );
+  const [blockerNotes, setBlockerNotes] = useState<BlockerNotes>({});
   const tabsRef = useRef<HTMLDivElement>(null);
   const storageKey = `authpilot:checklist:${guide.id}:v1`;
+  const pathKey = `authpilot:launch-path:${guide.id}:v1`;
+  const blockersKey = `authpilot:blockers:${guide.id}:v1`;
 
   useEffect(() => {
     const stored: Record<string, ChecklistStatus> = {};
+    let storedPath = guide.researchContext ?? defaultLaunchPath;
+    const storedBlockers: BlockerNotes = {};
     let error = "";
     try {
       const raw = localStorage.getItem(storageKey);
+      const pathRaw = localStorage.getItem(pathKey);
+      if (pathRaw) {
+        const parsed = launchPathSchema.safeParse(JSON.parse(pathRaw));
+        if (parsed.success) storedPath = parsed.data;
+      }
+      const blockersRaw = localStorage.getItem(blockersKey);
+      if (blockersRaw) {
+        const parsed: unknown = JSON.parse(blockersRaw);
+        if (parsed && typeof parsed === "object")
+          for (const [id, item] of Object.entries(parsed)) {
+            if (
+              guide.checklist.some((step) => step.id === id) &&
+              item &&
+              typeof item === "object" &&
+              typeof item.reason === "string" &&
+              typeof item.owner === "string"
+            )
+              storedBlockers[id] = {
+                reason: item.reason.slice(0, 500),
+                owner: item.owner.slice(0, 120),
+              };
+          }
+      }
       if (raw) {
         const value: unknown = JSON.parse(raw);
         if (value && typeof value === "object") {
@@ -519,11 +758,41 @@ export function GuideView({ guide }: { guide: Guide }) {
     }
     const frame = requestAnimationFrame(() => {
       setProgress(stored);
+      setLaunchPath(storedPath);
+      setBlockerNotes(storedBlockers);
       setStorageError(error);
       setStorageReady(true);
     });
     return () => cancelAnimationFrame(frame);
-  }, [storageKey, guide.checklist]);
+  }, [
+    storageKey,
+    pathKey,
+    blockersKey,
+    guide.checklist,
+    guide.researchContext,
+  ]);
+
+  function updateLaunchPath(value: LaunchPath) {
+    setLaunchPath(value);
+    try {
+      localStorage.setItem(pathKey, JSON.stringify(value));
+    } catch {
+      setStorageError(
+        "Your launch preferences could not be saved. They will last for this visit only.",
+      );
+    }
+  }
+  function updateBlocker(id: string, note: BlockerNote) {
+    const next = { ...blockerNotes, [id]: note };
+    setBlockerNotes(next);
+    try {
+      localStorage.setItem(blockersKey, JSON.stringify(next));
+    } catch {
+      setStorageError(
+        "Your blocker notes could not be saved. They will last for this visit only.",
+      );
+    }
+  }
 
   function updateProgress(id: string, status: ChecklistStatus) {
     const next = { ...progress, [id]: status };
@@ -539,8 +808,10 @@ export function GuideView({ guide }: { guide: Guide }) {
 
   function resetProgress() {
     setProgress({});
+    setBlockerNotes({});
     try {
       localStorage.removeItem(storageKey);
+      localStorage.removeItem(blockersKey);
       setFeedback("Checklist reset.");
     } catch {
       setStorageError(
@@ -580,9 +851,15 @@ export function GuideView({ guide }: { guide: Guide }) {
     }
   }
 
-  const done = guide.checklist.filter(
+  const applicableSteps = guide.checklist.filter(
+    (step) =>
+      !getStepApplicability(step, launchPath).excluded &&
+      progress[step.id] !== "not-applicable",
+  );
+  const done = applicableSteps.filter(
     (step) => progress[step.id] === "completed",
   ).length;
+  const planning = getPlanningEstimate(guide);
   const blocked = guide.checklist.filter(
     (step) => progress[step.id] === "blocked",
   ).length;
@@ -595,6 +872,9 @@ export function GuideView({ guide }: { guide: Guide }) {
     ready: storageReady,
     onChange: updateProgress,
     onRead: readSection,
+    launchPath,
+    blockers: blockerNotes,
+    onBlockerChange: updateBlocker,
   };
 
   return (
@@ -711,6 +991,28 @@ export function GuideView({ guide }: { guide: Guide }) {
       >
         {tab === "overview" && (
           <>
+            {isAuditedFigmaPlanningSnapshot(guide) && (
+              <div className="notice">
+                <CircleAlert size={18} />
+                <div>
+                  <strong>
+                    Plan amended after manual review · 3 November 2026
+                  </strong>
+                  <p>
+                    The generated publication order was corrected. Choosing an
+                    audience, preparing review materials, submitting, and
+                    awaiting the provider’s decision are separate steps. The
+                    original snapshot is retained.
+                  </p>
+                  <button
+                    className={styles.inlineAction}
+                    onClick={() => selectTab("steps", true)}
+                  >
+                    Read the corrected plan <ArrowRight size={12} />
+                  </button>
+                </div>
+              </div>
+            )}
             {guide.oauthSupport !== "supported" && (
               <div className="notice">
                 <CircleAlert size={18} />
@@ -772,6 +1074,31 @@ export function GuideView({ guide }: { guide: Guide }) {
                       Hands-on effort
                     </dt>
                     <dd>
+                      <dl className={styles.effortBreakdown}>
+                        <div>
+                          <dt>Registration</dt>
+                          <dd>{formatDuration(planning.registration)}</dd>
+                        </div>
+                        <div>
+                          <dt>Implementation & tests</dt>
+                          <dd>{formatDuration(planning.implementation)}</dd>
+                        </div>
+                      </dl>
+                      <p className={styles.planningLabel}>
+                        Planning estimate ·{" "}
+                        {planning.baseline
+                          ? "generic baseline"
+                          : "AI assessment"}{" "}
+                        · approval waiting excluded
+                      </p>
+                      <details className={styles.planningAssumptions}>
+                        <summary>Estimate assumptions</summary>
+                        <ul>
+                          {planning.assumptions.map((item, index) => (
+                            <li key={index}>{item}</li>
+                          ))}
+                        </ul>
+                      </details>
                       <p>{guide.effort.text}</p>
                       <ClaimEvidence claim={guide.effort} guide={guide} />
                     </dd>
@@ -833,6 +1160,8 @@ export function GuideView({ guide }: { guide: Guide }) {
                   progress={progress}
                   ready={storageReady}
                   onRead={readSection}
+                  launchPath={launchPath}
+                  blockers={blockerNotes}
                 />
                 <section className={styles.reviewPanel}>
                   <h2>
@@ -862,6 +1191,46 @@ export function GuideView({ guide }: { guide: Guide }) {
                 </div>
               </aside>
             </div>
+
+            <details
+              className={`${styles.disclosure} ${styles.launchPathDisclosure}`}
+            >
+              <summary>
+                <span>
+                  <GitBranch size={17} />
+                  Your launch path{" "}
+                  <span className={styles.pathSummary}>
+                    {launchPath.audience === "unsure"
+                      ? "Audience not selected"
+                      : launchPath.audience === "internal"
+                        ? "Internal audience"
+                        : "Public audience"}
+                  </span>
+                </span>
+                <ChevronDown size={16} />
+              </summary>
+              <div className={styles.launchPathBody}>
+                <ResearchSnapshotContext guide={guide} />
+                <LaunchPathFields
+                  value={launchPath}
+                  onChange={updateLaunchPath}
+                  disabled={!storageReady}
+                />
+                <p className={styles.navigationNote}>
+                  These preferences stay in this browser and adjust explicitly
+                  labelled checklist branches. They do not rewrite this shared
+                  research snapshot. To investigate different APIs or scopes,
+                  use Research again.
+                </p>
+                {launchPath.audience === "unsure" && (
+                  <p className={styles.navigationNote}>
+                    Audience is undecided: internal and public requirements
+                    remain visible until you choose. Optional marketplace steps
+                    are included only when selected.
+                  </p>
+                )}
+              </div>
+            </details>
 
             {guide.blockers.length > 0 && (
               <section className={styles.conditions}>
@@ -972,6 +1341,29 @@ export function GuideView({ guide }: { guide: Guide }) {
                 </button>
               </div>
               <Checklist {...checklistProps} />
+              <details
+                className={`${styles.disclosure} ${styles.launchPathDisclosure}`}
+              >
+                <summary>
+                  <span>
+                    <GitBranch size={17} />
+                    Adjust your launch path
+                  </span>
+                  <ChevronDown size={16} />
+                </summary>
+                <div className={styles.launchPathBody}>
+                  <ResearchSnapshotContext guide={guide} />
+                  <LaunchPathFields
+                    value={launchPath}
+                    onChange={updateLaunchPath}
+                    disabled={!storageReady}
+                  />
+                  <p className={styles.navigationNote}>
+                    Preferences and blocker notes are browser-local. Research
+                    again to investigate changed APIs or scopes.
+                  </p>
+                </div>
+              </details>
               <GuideSections guide={guide} ids={setupSections} />
             </div>
             <aside className={styles.sideNote}>
@@ -985,8 +1377,10 @@ export function GuideView({ guide }: { guide: Guide }) {
                 these steps.
               </p>
               <p>
-                {done} of {guide.checklist.length} checklist steps marked
-                complete in this browser.
+                {done} of {applicableSteps.length} applicable checklist steps
+                marked complete in this browser.{" "}
+                {guide.checklist.length - applicableSteps.length} omitted as not
+                applicable; omission is not completion.
                 {blocked
                   ? ` ${blocked} ${blocked === 1 ? "step is" : "steps are"} blocked.`
                   : ""}

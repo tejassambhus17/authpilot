@@ -1,5 +1,7 @@
 # Verification
 
+The reliability and launch-planning follow-up passed **282 unit tests across 19 files**, the **18-case quality subset**, **24 browser journeys**, TypeScript, lint, and production build. The first unit/browser failures and corrections, paid Figma result, manual plan amendment, UI review, and unexecuted hosted checks are kept in [reliability validation](reliability-validation.md). Counts below remain historical.
+
 The subsequent desktop UI refinement passed **195 unit tests across 13 files**, **20 browser journeys**, TypeScript, lint, and production build. It added category-presentation behavior checks and inspected twelve desktop dark/light captures. No paid research calls were made for the visual-only backend-preserving pass. See [desktop polish](desktop-polish.md) for measurements and scope; the engineering results below retain their historical counts.
 
 The final engineering pass on 3 November 2026 passed **192 unit tests**, **19 browser journeys**, TypeScript, lint, and a production build. The focused research-quality benchmark passed **18 deterministic cases**, with **8** separate evidence-path integration checks and **46** source-retrieval guard tests included in the unit total. These subsets overlap the total and must not be added to it. See [final validation](final-validation.md) for actual live outcomes, retained failures, corrections, and unexecuted production checks.
@@ -28,7 +30,7 @@ Playwright starts or reuses the local app on `http://127.0.0.1:3100`, avoiding c
 - Source-confirmed claims require references; references cannot point to absent sources.
 - Fabricated agent-tested setup findings are rejected.
 - HTTP-safe source URLs and machine-readable retrieval dates.
-- Library search and recovery, all three example guides, four-state checklist reload persistence, Markdown export, share feedback, and persisted light/dark switching.
+- Library search and recovery, all three example guides, five-state checklist reload persistence, launch-path exclusions, personal blocker notes, Markdown export, share feedback, and persisted light/dark switching.
 - Explore-to-research navigation with a prefilled provider and no automatic paid request; invalid research input handling.
 - Browser-local save/unsave across library, Saved, guide view, navigation, and reload; public shared content with independent progress in a fresh browser session.
 - Mobile navigation, accessible keyboard tabs, and honest evidence labels without whole-guide setup verification.

@@ -130,3 +130,23 @@ No backend/evidence contract or provider-policy content changed. This pass made 
 The five-section desktop finish report is [reviewer-report.md](.impeccable/review/desktop-polish/reviewer-report.md). No further visual fix is required by this review.
 
 final result: passed
+
+---
+
+## Research reliability and launch planning — 3 November 2026
+
+**Independent review disposition: ship after one bounded correction batch.** The initial review found one real P2 in the new live Figma plan: public publication was mixed with an audience choice before review preparation, with no separate final submission/provider-decision handoff. The fix and original finding remain in the [reviewer report](.impeccable/review/reliability/reviewer-report.md).
+
+The reviewer opened all ten initial authoritative states under `.impeccable/review/reliability/`: desktop ready/running/completed research, the live guide, original launch context, blocker fields, matched-source inspector, light guide, historical manual-correction inspector, and one retained 390×844 research-form guard. Desktop captures are 1440×900. Scrolled, expanded and modal captures are intentional named states. The completion image is an unchanged copy of the successful application state captured during the observer failure, not a replacement result. Metadata records no horizontal overflow or page/console errors.
+
+The final scoring pass opened only the two relevant 1440×900 confirmation captures: `confirmation/01-planning-notice.png` and `confirmation/02-corrected-terminal-plan.png`. The overview visibly marks a dated manual amendment. The corrected plan separates audience choice, testing/materials/readiness, developer submission and provider decision; optional Community preparation is affirmative. Submission remains dependent on the required work and selected optional preparation. Public-unlisted uncertainty stays outside the excluded optional task. No introduced material regression was found.
+
+Confirmation metadata reports zero research POSTs, overflow and page/console errors. The raw database snapshot remains 14 steps, the amended reading view has 16, and the before/after raw SHA-256 is identical. Factual claims, sources, matched passages and retrieval dates were not changed by the planning amendment. The original snapshot and the initial failure/correction history remain preserved.
+
+The final execution packet reports **282 unit tests across 19 files**, **18 quality cases included in that total**, **24/24 Edge browser journeys in 20.4 seconds**, TypeScript, lint and production build passing. Canonical DESIGN.md/sidecar documentation was reconciled and validated, including 39 source colors and ten rendered snippets. The finish reviewer inspected these records and sampled the relevant source; the reviewer did not independently rerun runtime checks.
+
+Exactly one real Figma URL submission completed and persisted within approximately 185 seconds. The saved guide contains 9 selected sources, 8 retrieved pages and 32 original claims; these are pipeline counts, not independent certification of every interpretation. A post-completion CDP observer body-read failure means raw NDJSON and any unobserved automatic-retry count were not retained. Read-only reload, Saved/reopen, checklist/blocker persistence, evidence inspection, sharing/fresh-reader state and Markdown export passed without another research request. The generic prompt correction was not paid-regenerated.
+
+The earlier historical Figma token/PKCE amendment remains explicitly labelled manual documentation work without an invented checked quotation. The public GitHub registration preflight stopped at sign-in; no provider app, credentials, token exchange or approval was created/tested. Local configuration checks pass; hosted configuration remains blocked by the absent remote database pair. No push or deployment occurred. Future generated plans, actual account setup, approval, and hosted connectivity/persistence/duration still require their own verification. Full details are in [reliability validation](docs/reliability-validation.md).
+
+final result: passed

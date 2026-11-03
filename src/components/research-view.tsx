@@ -23,7 +23,9 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
+  defaultLaunchPath,
   researchInputSchema,
+  type LaunchPath,
   type ResearchEvent,
   type ResearchPhase,
 } from "@/lib/schema";
@@ -33,6 +35,7 @@ import {
   publicEvidenceUrl,
 } from "@/lib/research-progress";
 import { ProviderIcon } from "./brand";
+import { LaunchPathFields } from "./launch-path-fields";
 import styles from "./research-view.module.css";
 
 type Readiness = {
@@ -99,7 +102,17 @@ function parseEvent(line: string): ResearchEvent {
     throw new Error(
       "The research stream returned an unreadable guide link. Please retry.",
     );
+  if (event.requestId !== undefined && !requestReference(event.requestId))
+    throw new Error(
+      "The research stream returned an unreadable request reference. Please retry.",
+    );
   return event as ResearchEvent;
+}
+
+function requestReference(value: unknown): string {
+  return typeof value === "string" && /^[a-zA-Z0-9_-]{8,80}$/.test(value)
+    ? value
+    : "";
 }
 
 export function ResearchView() {
@@ -107,6 +120,10 @@ export function ResearchView() {
   const [query, setQuery] = useState(params.get("q") || "");
   const [activeQuery, setActiveQuery] = useState("");
   const [token, setToken] = useState("");
+  const [launchPath, setLaunchPath] = useState<LaunchPath>(defaultLaunchPath);
+  const [requestId, setRequestId] = useState("");
+  const [pathStorageFailed, setPathStorageFailed] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
   const [events, setEvents] = useState<ResearchEvent[]>([]);
   const [running, setRunning] = useState(false);
   const [attempted, setAttempted] = useState(false);
@@ -116,6 +133,16 @@ export function ResearchView() {
   const [statusError, setStatusError] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!running) return;
+    const started = Date.now();
+    const timer = setInterval(
+      () => setElapsed(Math.floor((Date.now() - started) / 1000)),
+      1000,
+    );
+    return () => clearInterval(timer);
+  }, [running]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -133,7 +160,8 @@ export function ResearchView() {
 
   async function research(event: React.FormEvent) {
     event.preventDefault();
-    const parsed = researchInputSchema.safeParse({ query });
+    setRequestId("");
+    const parsed = researchInputSchema.safeParse({ query, launchPath });
     if (!parsed.success) {
       setError(
         parsed.error.issues[0]?.message || "Enter a provider name or website.",
@@ -141,11 +169,14 @@ export function ResearchView() {
       inputRef.current?.focus();
       return;
     }
+    const input = parsed.data;
     setError("");
+    setPathStorageFailed(false);
     setGuideId("");
     setEvents([]);
-    setActiveQuery(parsed.data.query);
+    setActiveQuery(input.query);
     setAttempted(true);
+    setElapsed(0);
     setRunning(true);
     const controller = new AbortController();
     abortRef.current = controller;
@@ -157,11 +188,14 @@ export function ResearchView() {
           "Content-Type": "application/json",
           ...(token ? { "x-research-token": token } : {}),
         },
-        body: JSON.stringify(parsed.data),
+        body: JSON.stringify(input),
         signal: controller.signal,
       });
+      setRequestId(requestReference(response.headers.get("X-Request-Id")));
       if (!response.ok) {
         const body = await response.json().catch(() => null);
+        if (requestReference(body?.requestId))
+          setRequestId(requestReference(body.requestId));
         throw new Error(
           typeof body?.error === "string"
             ? body.error
@@ -180,10 +214,19 @@ export function ResearchView() {
       function consume(line: string) {
         if (!line.trim()) return;
         const researchEvent = parseEvent(line);
+        if (researchEvent.requestId) setRequestId(researchEvent.requestId);
         setEvents((previous) => [...previous, researchEvent]);
         if (researchEvent.phase === "error")
           throw new Error(researchEvent.message);
         if (researchEvent.phase === "complete" && researchEvent.guideId) {
+          try {
+            localStorage.setItem(
+              `authpilot:launch-path:${researchEvent.guideId}:v1`,
+              JSON.stringify(input.launchPath),
+            );
+          } catch {
+            setPathStorageFailed(true);
+          }
           receivedComplete = true;
           setGuideId(researchEvent.guideId);
         }
@@ -335,6 +378,25 @@ export function ResearchView() {
           Public names and websites only. Never enter API keys, client secrets,
           or private account information.
         </p>
+        <details className={styles.launchDetails} open={!attempted}>
+          <summary>
+            Your launch path ·{" "}
+            {launchPath.audience === "unsure"
+              ? "Audience not selected"
+              : launchPath.audience === "internal"
+                ? "Internal audience"
+                : "Public audience"}
+          </summary>
+          <LaunchPathFields
+            value={launchPath}
+            onChange={setLaunchPath}
+            disabled={running}
+          />
+        </details>
+        <p className={styles.fieldHelp}>
+          Use generic API and scope names only. This context informs a public,
+          shareable guide; do not include private project details.
+        </p>
         <div className={styles.formFooter}>
           <details
             className={styles.accessDetails}
@@ -393,12 +455,31 @@ export function ResearchView() {
         </div>
       </form>
 
+      {running && (
+        <p className={styles.requestMeta} aria-live="off">
+          Elapsed {Math.floor(elapsed / 60)}:
+          {String(elapsed % 60).padStart(2, "0")}. Research may take several
+          minutes; the server stops requests after 4 minutes 30 seconds.
+          {requestId && (
+            <>
+              {" "}
+              Request reference: <code>{requestId}</code>.
+            </>
+          )}
+        </p>
+      )}
+
       {error && (
         <div className={`notice error ${styles.alert}`} role="alert">
           <CircleAlert size={19} />
           <div>
             <strong>Research needs your attention</strong>
             <p>{error}</p>
+            {requestId && (
+              <p className={styles.requestMeta}>
+                Request reference: <code>{requestId}</code>
+              </p>
+            )}
             <p className={styles.recovery}>
               {error.includes("OPENAI_API_KEY") ? (
                 <Link href="/methodology#setup" className="source-reference">
@@ -422,6 +503,8 @@ export function ResearchView() {
             <p>
               Saved with its evidence and a persistent URL. Review the sources
               before you configure your app.
+              {pathStorageFailed &&
+                " Your browser could not retain your launch preferences; choose them again in the guide."}
             </p>
           </div>
           <Link

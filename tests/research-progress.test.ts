@@ -99,4 +99,27 @@ describe("observed research progress", () => {
       sources.every((source) => !source.classification.includes("Official")),
     ).toBe(true);
   });
+
+  it("deduplicates campaign variants but preserves distinct document versions", () => {
+    const sources = getDiscoveredSources([
+      event("source-found", {
+        message: "Figma OAuth docs",
+        url: "https://developers.figma.com/docs/rest-api/oauth-apps/?utm_source=search#pkce",
+      }),
+      event("source-found", {
+        message: "Same document",
+        url: "https://developers.figma.com/docs/rest-api/oauth-apps/",
+      }),
+      event("source-found", {
+        message: "Versioned document",
+        url: "https://developers.figma.com/docs/rest-api/oauth-apps/?version=v2",
+      }),
+      event("source-found", { url: "https://localhost/docs" }),
+    ]);
+    expect(sources).toHaveLength(2);
+    expect(sources[0].url).toBe(
+      "https://developers.figma.com/docs/rest-api/oauth-apps/",
+    );
+    expect(sources[1].url).toContain("version=v2");
+  });
 });

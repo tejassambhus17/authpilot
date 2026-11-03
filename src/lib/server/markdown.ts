@@ -1,5 +1,6 @@
 import "server-only";
 import type { Claim, Guide } from "@/lib/schema";
+import { formatDuration, getPlanningEstimate } from "@/lib/launch-path";
 
 function claimLine(claim: Claim, guide: Guide): string {
   const links = claim.sourceIds
@@ -27,6 +28,7 @@ function claimLine(claim: Claim, guide: Guide): string {
 }
 
 export function guideToMarkdown(guide: Guide): string {
+  const planning = getPlanningEstimate(guide);
   return [
     `# ${guide.provider} OAuth integration guide`,
     "",
@@ -39,8 +41,28 @@ export function guideToMarkdown(guide: Guide): string {
     `- Created: ${guide.createdAt}`,
     `- Updated: ${guide.updatedAt}`,
     `- Origin: ${guide.origin}`,
+    ...(guide.researchContext
+      ? [
+          "",
+          "## Research snapshot context",
+          "",
+          `- Audience: ${guide.researchContext.audience}`,
+          `- Intended APIs: ${guide.researchContext.intendedApis || "Not specified"}`,
+          `- Scopes to investigate: ${guide.researchContext.scopes || "Not specified"}`,
+          `- Declared account permissions: ${guide.researchContext.accountPermissions}`,
+          `- Requested optional listing investigation: ${guide.researchContext.marketplaceListing ? "Yes" : "No"}`,
+          "These are the original request assumptions, not confirmed eligibility or provider evidence. Changing browser-local preferences does not research missing requirements; research again for another launch path.",
+        ]
+      : []),
     "",
     "## Effort and approval",
+    "",
+    `- Hands-on registration estimate: ${formatDuration(planning.registration)}`,
+    `- Hands-on implementation estimate: ${formatDuration(planning.implementation)}`,
+    `- Basis: ${planning.baseline ? "Generic planning baseline, not provider-measured" : "AI planning judgment, not provider-measured"}. These estimates exclude approval waiting.`,
+    ...planning.assumptions.map(
+      (assumption) => `  - Assumption: ${assumption}`,
+    ),
     "",
     claimLine(guide.effort, guide),
     claimLine(guide.approval, guide),
@@ -58,6 +80,7 @@ export function guideToMarkdown(guide: Guide): string {
     ...guide.checklist.map((step) =>
       [
         `- [ ] **${step.title}** (${step.actor}; ${step.sectionId}) — ${step.description}`,
+        `  - Applicable path: ${step.applicability || "Not recorded; confirm applicability"}. Requirement: ${step.requirementType || "Not classified"}.`,
         step.dependsOn
           ? `  - Dependencies: ${step.dependsOn.length ? step.dependsOn.join(", ") : "No recorded prerequisites"}`
           : "  - Dependency metadata was not captured; checklist order is used conservatively.",
@@ -71,10 +94,13 @@ export function guideToMarkdown(guide: Guide): string {
             ]
           : []),
         ...(step.recovery ? [`  - If blocked: ${step.recovery}`] : []),
+        ...(step.recoveryOwner
+          ? [`  - Recovery owner: ${step.recoveryOwner}`]
+          : []),
       ].join("\n"),
     ),
     "",
-    "Checklist boxes are intentionally blank: progress belongs to the current browser, not the shared guide.",
+    "Checklist boxes are intentionally blank: progress belongs to the current browser, not the shared guide. Launch preferences, blocker notes and Not applicable decisions also stay in the current browser. Confirm the applicable path before marking a step Not applicable; a required skipped prerequisite does not satisfy dependencies.",
     "",
     "## Blockers",
     "",

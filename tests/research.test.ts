@@ -10,12 +10,14 @@ import {
   guideTextFormat,
   OpenAIResearchTransport,
   researchProvider,
+  researchResponseFailure,
   safeSourceUrl,
   validateResearchedGuide,
   type ResearchMaterial,
   type ResearchTransport,
 } from "@/lib/server/research";
 import { publicResearchError, researchDiagnostic } from "@/lib/server/errors";
+import { transientResearchFailure } from "@/lib/server/research-retry";
 
 const date = "2026-11-03T10:00:00.000Z";
 const url = "https://docs.example.com/oauth";
@@ -102,7 +104,17 @@ function wireContent() {
     dependsOn: [],
     sourceIds: ["s1"],
     recovery: "Review the provider documentation before retrying.",
+    recoveryOwner: "Developer",
+    applicability: "all",
+    requirementType: "required",
   }));
+  result.planning = {
+    registration: { minMinutes: 15, maxMinutes: 30 },
+    implementation: { minMinutes: 120, maxMinutes: 240 },
+    assumptions: [
+      "Developer has console access and an existing web application.",
+    ],
+  };
   return result;
 }
 
@@ -153,12 +165,43 @@ describe("research provenance", () => {
     });
   });
 
+  it("deduplicates tracked search URLs without inventing new source candidates", () => {
+    const result = extractSearchMaterial({
+      output: [
+        {
+          type: "web_search_call",
+          action: {
+            sources: [
+              { url: `${url}?utm_source=search`, title: "Docs" },
+              { url, title: "Same docs" },
+              { url: `${url}?version=v2`, title: "Versioned docs" },
+            ],
+          },
+        },
+      ],
+    });
+    expect(result.sources.map((source) => source.url)).toEqual([
+      url,
+      `${url}?version=v2`,
+    ]);
+  });
+
   it("rejects a model-invented citation before persistence", () => {
     const generated = content();
     generated.sources[0].url = "https://invented.example.com/requirements";
     expect(() => validateResearchedGuide(generated, material, date)).toThrow(
       "could not be traced",
     );
+  });
+
+  it("rejects model-authored launch context instead of trusting metadata", () => {
+    expect(() =>
+      validateResearchedGuide(
+        { ...content(), researchContext: { audience: "public" } },
+        material,
+        date,
+      ),
+    ).toThrow();
   });
 
   it("replaces model timestamps with actual retrieval time", () => {
@@ -281,6 +324,63 @@ describe("research orchestration", () => {
       synthesize: vi.fn().mockResolvedValue(content()),
     };
   }
+
+  it("retains validated request assumptions in the saved guide separately from model content", async () => {
+    const engine = transport();
+    const launchPath = {
+      audience: "internal" as const,
+      intendedApis: "Read design files",
+      scopes: "file_content:read",
+      accountPermissions: "member" as const,
+      marketplaceListing: false,
+    };
+    const save = vi.fn();
+    const guide = await researchProvider("Example", {
+      transport: engine,
+      emit: vi.fn(),
+      save,
+      launchPath,
+      signal: new AbortController().signal,
+    });
+    expect(engine.search).toHaveBeenCalledWith(
+      "Example",
+      expect.any(Function),
+      expect.any(AbortSignal),
+      launchPath,
+    );
+    expect(engine.synthesize).toHaveBeenCalledWith(
+      "Example",
+      material,
+      expect.any(AbortSignal),
+      launchPath,
+    );
+    expect(guide.researchContext).toEqual(launchPath);
+    expect(save).toHaveBeenCalledWith(
+      expect.objectContaining({ researchContext: launchPath }),
+    );
+  });
+
+  it("retries a temporary search failure once and saves only the completed guide", async () => {
+    const engine = transport();
+    vi.mocked(engine.search)
+      .mockRejectedValueOnce({ name: "APIConnectionError" })
+      .mockResolvedValueOnce(material);
+    const save = vi.fn();
+    const events: ResearchEvent[] = [];
+    await researchProvider("Example", {
+      transport: engine,
+      emit: (event) => events.push(event),
+      save,
+      signal: new AbortController().signal,
+    });
+    expect(engine.search).toHaveBeenCalledTimes(2);
+    expect(engine.synthesize).toHaveBeenCalledOnce();
+    expect(save).toHaveBeenCalledOnce();
+    expect(
+      events.some((event) => event.message.includes("Retrying once")),
+    ).toBe(true);
+    expect(events.at(-1)?.phase).toBe("complete");
+  });
   it("requires a real server API key instead of falling back to a demo generator", () => {
     const previous = process.env.OPENAI_API_KEY;
     delete process.env.OPENAI_API_KEY;
@@ -389,6 +489,69 @@ describe("research orchestration", () => {
 
 describe("installed OpenAI SDK wire compatibility", () => {
   it.each([
+    ["server_error", "RESEARCH_UPSTREAM_TEMPORARY", true],
+    ["rate_limit_exceeded", "RESEARCH_RATE_LIMIT_TEMPORARY", true],
+    ["insufficient_quota", "PROVIDER_QUOTA", false],
+    ["invalid_api_key", "PROVIDER_AUTH", false],
+    ["invalid_json_schema", "RESEARCH_REJECTED", false],
+    ["model_not_found", "RESEARCH_REJECTED", false],
+    ["unknown-rejection-code", "RESEARCH_REJECTED", false],
+  ])(
+    "classifies failed stream code %s without echoing upstream data",
+    async (code, expected, retryable) => {
+      vi.stubEnv("OPENAI_API_KEY", "test-placeholder-not-a-real-api-key");
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => {
+          const event = {
+            type: "response.failed",
+            sequence_number: 1,
+            response: {
+              status: "failed",
+              error: { code, message: "secret upstream details" },
+            },
+          };
+          return new Response(
+            `event: response.failed\ndata: ${JSON.stringify(event)}\n\ndata: [DONE]\n\n`,
+            { headers: { "Content-Type": "text/event-stream" } },
+          );
+        }),
+      );
+      const transport = new OpenAIResearchTransport();
+      const failure = await transport
+        .search("Example", vi.fn(), new AbortController().signal)
+        .catch((error: unknown) => error);
+      expect(failure).toMatchObject({ code: expected });
+      expect(transientResearchFailure(failure)).toBe(retryable);
+      expect(String(failure)).not.toContain("secret upstream details");
+      expect(fetch).toHaveBeenCalledOnce();
+    },
+  );
+
+  it.each(["content_filter", "max_output_tokens"])(
+    "never retries a documented permanent incomplete response: %s",
+    (reason) => {
+      const failure = researchResponseFailure(
+        { status: "incomplete", incomplete_details: { reason } },
+        "GENERATION_INCOMPLETE",
+      );
+      expect(transientResearchFailure(failure)).toBe(false);
+    },
+  );
+
+  it("does not retry a completed refusal", () => {
+    const failure = researchResponseFailure(
+      {
+        status: "completed",
+        output: [{ type: "message", content: [{ type: "refusal" }] }],
+      },
+      "GENERATION_INCOMPLETE",
+    );
+    expect(failure.code).toBe("RESEARCH_REFUSED");
+    expect(transientResearchFailure(failure)).toBe(false);
+  });
+
+  it.each([
     { configured: "", expected: "gpt-5.5", reasoning: true },
     { configured: "gpt-5.5", expected: "gpt-5.5", reasoning: true },
     { configured: "gpt-4.1", expected: "gpt-4.1", reasoning: false },
@@ -454,6 +617,8 @@ describe("installed OpenAI SDK wire compatibility", () => {
               { headers: { "Content-Type": "text/event-stream" } },
             );
           }
+          const format = body.text as
+            { format?: { name?: string } } | undefined;
           return Response.json({
             id: "response-test",
             object: "response",
@@ -467,7 +632,11 @@ describe("installed OpenAI SDK wire compatibility", () => {
                 content: [
                   {
                     type: "output_text",
-                    text: JSON.stringify(wireContent()),
+                    text: JSON.stringify(
+                      format?.format?.name === "oauth_evidence_review"
+                        ? { claims: [] }
+                        : wireContent(),
+                    ),
                     annotations: [],
                   },
                 ],
@@ -495,6 +664,14 @@ describe("installed OpenAI SDK wire compatibility", () => {
           new AbortController().signal,
         ),
       ).toEqual(wireContent());
+      expect(
+        await transport.reviewEvidence(
+          wireContent(),
+          [],
+          new AbortController().signal,
+        ),
+      ).toEqual({ claims: [] });
+      expect(requests).toHaveLength(3);
       expect(requests[0]).toMatchObject({
         tool_choice: "required",
         stream: true,
@@ -507,7 +684,7 @@ describe("installed OpenAI SDK wire compatibility", () => {
         text: { format: { type: "json_schema", strict: true } },
       });
       expect(JSON.stringify(requests[1])).not.toContain('"format":"uri"');
-      // The safety policy must reach both real SDK requests; a schema/provenance
+      // The safety policy must reach all three real SDK requests; a schema/provenance
       // check alone cannot catch a valid citation used for the wrong app lifecycle.
       for (const request of requests) {
         expect(request.model).toBe(expected);
@@ -534,6 +711,30 @@ describe("installed OpenAI SDK wire compatibility", () => {
         );
         expect(instructions).toMatch(
           /preserve documented listing submission and review requirements even when their timing is unknown/i,
+        );
+        expect(instructions).toMatch(
+          /choose the audience \(planning only, never publish or submit\)/i,
+        );
+        expect(instructions).toMatch(
+          /submission step must depend explicitly on all relevant preparation and testing steps/i,
+        );
+        expect(instructions).toMatch(
+          /provider-decision step must depend on submission/i,
+        );
+        expect(instructions).toMatch(
+          /include an explicit final submission and separate provider-decision step/i,
+        );
+        expect(instructions).toMatch(
+          /waiting for a provider decision is never an approval guarantee/i,
+        );
+        expect(instructions).toMatch(
+          /optional checklist steps must describe affirmative actions/i,
+        );
+        expect(instructions).toMatch(
+          /critical uncertainty about public or unlisted installability must remain visible/i,
+        );
+        expect(instructions).toMatch(
+          /must not appear only inside an excluded optional listing step/i,
         );
       }
     },

@@ -73,10 +73,19 @@ export function publicResearchError(error: unknown): ResearchError {
   if (error instanceof ResearchError) return error;
   if (error && typeof error === "object") {
     const detail = error as { name?: string; status?: number; code?: string };
-    if (
-      detail.name === "APIConnectionError" ||
-      detail.name === "APIConnectionTimeoutError"
-    )
+    if (detail.code === "insufficient_quota")
+      return new ResearchError(
+        "PROVIDER_QUOTA",
+        "The research service has no available quota. Ask the application owner to check the API account budget. Nothing was saved.",
+        503,
+      );
+    if (detail.name === "APIConnectionTimeoutError")
+      return new ResearchError(
+        "RESEARCH_SERVICE_TIMEOUT",
+        "A request to the research service timed out. Nothing was saved. Your input is preserved; retry with the provider's official website.",
+        504,
+      );
+    if (detail.name === "APIConnectionError")
       return new ResearchError(
         "RESEARCH_CONNECTION",
         "The connection to the research service was interrupted. Nothing was saved. Your input is preserved; please retry.",

@@ -132,6 +132,11 @@ components:
     textColor: "{colors.foreground}"
     rounded: "{rounded.control}"
     padding: "0 14px"
+  launch-path-field:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.control}"
+    padding: "10px 12px"
   explore-field:
     backgroundColor: "{colors.surface-soft}"
     rounded: "{rounded.panel}"
@@ -184,6 +189,8 @@ The interface balances a compact operating view for finding providers and follow
 The evidence inspector keeps exact claims, conditions, source passages, AI interpretations, source links, retrieval dates, and verification status distinct. New research uses search, structured synthesis, bounded page retrieval, a separate AI support assessment, and deterministic passage matching. Provider-domain association is a heuristic rather than proof of official identity; legacy summaries are never presented as checked quotations. Older generated consequential claims without recorded support appear unknown at read time without overwriting their stored snapshots.
 
 Next-step guidance respects blocked tasks and unmet dependencies. Explicitly independent tasks may proceed, while older guides use checklist order conservatively. Recovery instructions and documentation links distinguish step-specific evidence from related section guidance. These checks do not execute provider setup or obtain approval.
+
+Launch-path controls extend the existing form language. Original research assumptions remain distinct from the current reader's preferences; estimates separate registration, implementation, and provider waiting. Required, conditional, omitted, and blocked work retain visible explanations rather than relying on completion color alone.
 
 **Key Characteristics:**
 
@@ -255,6 +262,8 @@ The Guide overview has three desktop columns: integration facts, setup checklist
 
 Research places its actual-event timeline beside the returned-source panel in equal flexible columns, with a form above and collapsible event journal below. It becomes one column at 760px, preserving timeline-before-evidence reading order. Source lists scroll within their panel; long URLs wrap or truncate inside their own controls.
 
+Launch-path fields use two equal columns with 16px row gaps and 24px column gaps, stacking below 600px. Guide disclosures retain the established flat container treatment and 24px inner padding; original research-context facts use a compact two-column definition list, also stacking below 600px. The Research form opens its launch disclosure before the first attempt and collapses it after submission so observed progress can occupy the reading area.
+
 Spacing uses the recorded rhythm with contextual intermediate values for individual controls. Shared CSS spacing properties name the recurring control (8px), compact (12px), content (16px), panel (24px), and section (32px) steps. The guide's desktop tabs sit 24px below metadata; empty clipboard feedback adds no margin. Responsive boundaries are wide desktop (1600px), compact frame (1160px), mobile navigation/library rail (820px), narrow frame/Explore (560px), Guide (1199px, 800px, 480px), and Research (1100px, 760px, 420px). At 1160px the outer gutter is 14px and general page padding is 30px; the library rail is 193px with a 23px gap. At 820px desktop navigation becomes a modal menu and library filters wrap above records. At 560px the frame is edge-to-edge without an outer border or radius, the top bar is 65px, content has 20px side padding, feature summaries stack, and the Explore action spans the field width. Library record actions move beneath provider identity.
 
 ## Elevation & Depth
@@ -299,17 +308,29 @@ Feature summaries, library records, checklist, and evidence panels share a flat 
 
 The six semantic tabs are Overview, Setup steps, Scopes, Approval & review, Common issues, and Sources. The selected tab has violet-wash fill, foreground text, and a readable-violet underline. Arrow, Home, and End keys move focus and selection. Tabs have a minimum height (48px); the panel has a visible 3px focus outline with 8px offset.
 
-The checklist shows this browser's completed count, native checkboxes and status selects, and links to relevant guidance. The next-action panel recommends only unblocked steps whose dependencies are complete. When a task is blocked or dependency-locked, it presents recovery guidance instead; other blockers remain visible. Legacy steps without explicit dependencies use checklist order conservatively. Direct step source IDs take precedence, and fallback links are labelled related documentation. The 4px progress track reflects the completed fraction via `scaleX`, with a 0.2s ease-out transform transition. Bookmarks and checklist state are browser-local; public guide URLs share content. A guide distinguishes documentation research from unperformed provider setup.
+The checklist shows this browser's applicable completed count, native checkboxes and status selects, and links to relevant guidance. Statuses are Not started, In progress, Blocked, Completed, and Not applicable. Explicit audience exclusions and manual omissions have separate explanations and counts; manually omitting a required prerequisite does not satisfy a dependent step. Only explicitly optional listing work can be excluded by the optional-listing preference. Conflicting internal/listing preferences keep both audience branches visible with an amber explanation.
+
+The next-action panel recommends only unblocked steps whose dependencies are satisfied for the selected path. When a task is blocked or dependency-locked, it presents recovery guidance instead; other blockers and genuinely independent work remain visible. Expanded blocked steps expose a local reason field and responsible-person/role field beside recovery and documentation. These fields use the canvas ground, control corners, 44px minimum height, 13px input text, and 10px/12px padding; the reason textarea has an 82px minimum and resizes vertically. Legacy steps without explicit dependencies use checklist order conservatively. Direct step source IDs take precedence, and fallback links are labelled related documentation. The 4px progress track reflects the applicable completed fraction via `scaleX`, with a 0.2s ease-out transform transition. Bookmarks, checklist status, edited launch preferences, and blocker notes are browser-local; public guide URLs share content. A guide distinguishes documentation research from unperformed provider setup.
+
+The audited snapshot with a manually amended publication plan shows a dated Overview notice in the existing notice treatment. Its Read the corrected plan action opens Setup steps. The notice distinguishes audience choice, review preparation, submission, and provider decision while stating that the original snapshot is retained; it does not imply a new retrieval or setup test.
+
+### Launch path and effort
+
+The reusable launch fieldset has a visible 15px/600 legend, 12px labels, and native 13px controls. It asks for audience, account permissions, optional API/scope names, and optional listing investigation. Controls have a 44px minimum height, use the recorded launch-field tokens, and retain shared focus treatment. Help and conflict copy are 12px/1.7; the optional-listing checkbox is 16px with action-violet accent. Research disables the fieldset during a request. In the guide, disclosure summaries distinguish current browser preferences from a read-only Research snapshot context; declared permissions are user input, not verified access, and a preference change does not research missing requirements.
+
+Hands-on effort displays separate registration and implementation/test ranges with 12px muted labels and 13px/550 values. An 11px amber planning label identifies either a generic baseline or an AI assessment and excludes approval waiting. Expandable assumptions use 12px/1.7 text. Approval remains its own evidence-backed or unknown narrative fact; unsupported OAuth receives no executable effort estimate.
 
 ### Claim evidence inspector
 
 “Why this requirement?” opens a labelled Radix modal inspection panel with focus trapping, Escape dismissal, focus return, and a 44px close control. The panel fits within mobile viewports and scrolls its own reading area. It presents the exact claim and applicable conditions, then compact verification status, its exact check date, and a caveat before supporting passages. Extended assessment details follow the passages; documentation links, retained summaries, retrieval metadata, and their original dates remain available below. Source summaries are explicitly not quotations; missing or conflicting support and provider-domain uncertainty stay visible. A matched passage proves text presence, not factual entailment or a completed OAuth setup.
 
+Dated manual amendments to an audited historical snapshot use Documentation correction, Manual documentation audit, and Documentation audit summary labels. They do not inherit the AI-interpretation or matched-passage labels, and their caveat states that no server-checked quotation or executed setup is recorded.
+
 ### Research timeline and evidence
 
 The timeline maps observed backend phases to Request accepted, Find documentation, Build the integration guide, Check the evidence, and Save your guide. Stage labels distinguish pending, in progress, completed, and interrupted. Do not invent separate approval-investigation events that the backend has not emitted.
 
-The evidence panel shows actual returned titles, domains, URLs, and classification. **Documentation candidate** and **Retrieved source** classify links without certifying a claim. Source counts reflect returned links. The journal retains observed events and actual timestamps. A completed request links to the persisted guide; failures and cancellation retain explanatory recovery actions.
+The evidence panel shows actual returned titles, domains, canonical URLs, and classification. Known campaign parameters are removed before duplicate candidates are counted. **Documentation candidate** and **Retrieved source** classify links without certifying a claim. Source counts reflect distinct returned links. The journal retains observed events and actual timestamps, including an automatic retry only when a retry actually occurs. A completed request links to the persisted guide; failures and cancellation retain explanatory recovery actions. While a request is active, a 12px muted line shows actual elapsed time and the request limit; safe request references use 11px code text and wrap within their container. Elapsed time is not an invented completion estimate, and error references remain available for troubleshooting.
 
 Loading spinners indicate an active request, never a completion estimate: shared loaders rotate over 1.2s and the Research spinner over 1s. Route skeletons alternate opacity over 1.4s. Reduced-motion preferences remove animations, transitions, and smooth scrolling throughout the app. Status meaning remains visible in text without motion or color.
 

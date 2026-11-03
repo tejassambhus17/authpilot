@@ -1,4 +1,10 @@
-import type { ChecklistStatus, Guide } from "@/lib/schema";
+import {
+  defaultLaunchPath,
+  type ChecklistStatus,
+  type Guide,
+  type LaunchPath,
+} from "@/lib/schema";
+import { getStepApplicability } from "@/lib/launch-path";
 
 type Step = Guide["checklist"][number];
 type Progress = Record<string, ChecklistStatus>;
@@ -14,12 +20,14 @@ export type StepDependency = {
   id: string;
   title: string;
   status: ChecklistStatus | "missing";
+  satisfied: boolean;
 };
 
 export function getStepDependencies(
   steps: Step[],
   step: Step,
   progress: Progress,
+  path: LaunchPath = defaultLaunchPath,
 ): { dependencies: StepDependency[]; inferredOrder: boolean } {
   const index = steps.findIndex((candidate) => candidate.id === step.id);
   const inferredOrder = step.dependsOn === undefined;
@@ -30,24 +38,44 @@ export function getStepDependencies(
     inferredOrder,
     dependencies: ids.map((id) => {
       const dependency = steps.find((candidate) => candidate.id === id);
+      const excluded =
+        dependency && getStepApplicability(dependency, path).excluded;
+      const status = dependency
+        ? excluded
+          ? "not-applicable"
+          : progress[id] || "not-started"
+        : "missing";
       return {
         id,
         title: dependency?.title || `Unresolved prerequisite (${id})`,
-        status: dependency ? progress[id] || "not-started" : "missing",
+        status,
+        satisfied: Boolean(
+          excluded ||
+          status === "completed" ||
+          (status === "not-applicable" &&
+            dependency?.requirementType === "optional"),
+        ),
       };
     }),
   };
 }
 
-export function getGuideNextStep(guide: Guide, progress: Progress) {
+export function getGuideNextStep(
+  guide: Guide,
+  progress: Progress,
+  path: LaunchPath = defaultLaunchPath,
+) {
   const supportUnestablished = guide.oauthSupport !== "supported";
   const incomplete = guide.checklist.filter(
-    (step) => progress[step.id] !== "completed",
+    (step) =>
+      progress[step.id] !== "completed" &&
+      progress[step.id] !== "not-applicable" &&
+      !getStepApplicability(step, path).excluded,
   );
   const blockedSteps = incomplete.filter(
     (step) => progress[step.id] === "blocked",
   );
-  const actionable = incomplete.find((step) => {
+  const actionableSteps = incomplete.filter((step) => {
     if (progress[step.id] === "blocked") return false;
     if (supportUnestablished && oauthExecutionSections.has(step.sectionId))
       return false;
@@ -55,11 +83,13 @@ export function getGuideNextStep(guide: Guide, progress: Progress) {
       guide.checklist,
       step,
       progress,
-    ).dependencies.every((dependency) => dependency.status === "completed");
+      path,
+    ).dependencies.every((dependency) => dependency.satisfied);
   });
+  const actionable = actionableSteps[0];
   const step = actionable || blockedSteps[0] || incomplete[0];
   const dependencyInfo = step
-    ? getStepDependencies(guide.checklist, step, progress)
+    ? getStepDependencies(guide.checklist, step, progress, path)
     : { dependencies: [], inferredOrder: false };
   return {
     kind: !step
@@ -75,9 +105,10 @@ export function getGuideNextStep(guide: Guide, progress: Progress) {
       oauthExecutionSections.has(step.sectionId),
     ),
     blockedSteps,
+    actionableSteps,
     ...dependencyInfo,
     unmetDependencies: dependencyInfo.dependencies.filter(
-      (dependency) => dependency.status !== "completed",
+      (dependency) => !dependency.satisfied,
     ),
   };
 }

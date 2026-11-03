@@ -326,7 +326,16 @@ test("research UI handles rate-limit failure, retry, NDJSON events, and guide na
   let requests = 0;
   await page.route("**/api/research", async (route) => {
     requests++;
-    expect(route.request().postDataJSON()).toEqual({ query: "GitHub" });
+    expect(route.request().postDataJSON()).toEqual({
+      query: "GitHub",
+      launchPath: {
+        audience: "internal",
+        intendedApis: "Read issues",
+        scopes: "read:user",
+        accountPermissions: "member",
+        marketplaceListing: false,
+      },
+    });
     if (requests === 1) {
       await route.fulfill({
         status: 429,
@@ -334,6 +343,7 @@ test("research UI handles rate-limit failure, retry, NDJSON events, and guide na
           error:
             "The research service is rate limited. Wait a moment and retry.",
           code: "PROVIDER_RATE_LIMIT",
+          requestId: "AP-test-http-error",
         },
       });
       return;
@@ -351,6 +361,11 @@ test("research UI handles rate-limit failure, retry, NDJSON events, and guide na
         url: "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app",
       },
       {
+        phase: "source-found",
+        message: "Creating an OAuth app (campaign link)",
+        url: "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app?utm_source=test",
+      },
+      {
         phase: "synthesizing",
         message: "Documentation returned. Building a structured guide.",
       },
@@ -360,7 +375,11 @@ test("research UI handles rate-limit failure, retry, NDJSON events, and guide na
       },
       { phase: "saving", message: "Saving a persistent guide snapshot." },
       { phase: "complete", message: "Your guide is ready.", guideId: "github" },
-    ].map((event) => ({ ...event, timestamp: "2026-11-03T12:00:00.000Z" }));
+    ].map((event) => ({
+      ...event,
+      requestId: "AP-test-stream-ok",
+      timestamp: "2026-11-03T12:00:00.000Z",
+    }));
     await route.fulfill({
       contentType: "application/x-ndjson; charset=utf-8",
       body: events.map((event) => JSON.stringify(event)).join("\n") + "\n",
@@ -369,6 +388,16 @@ test("research UI handles rate-limit failure, retry, NDJSON events, and guide na
   await page.goto("/research");
   await page.getByLabel("Which provider are you integrating?").fill("GitHub");
   await page
+    .getByRole("combobox", { name: "App audience", exact: true })
+    .selectOption("internal");
+  await page
+    .getByRole("combobox", { name: "Your account permissions", exact: true })
+    .selectOption("member");
+  await page.getByLabel("Intended APIs", { exact: false }).fill("Read issues");
+  await page
+    .getByLabel("Scopes to investigate", { exact: false })
+    .fill("read:user");
+  await page
     .getByRole("button", { name: "Research provider", exact: true })
     .click();
   await expect(
@@ -376,6 +405,11 @@ test("research UI handles rate-limit failure, retry, NDJSON events, and guide na
       .getByRole("alert")
       .filter({ hasText: "Research needs your attention" }),
   ).toContainText(/rate limited/);
+  await expect(
+    page
+      .getByRole("alert")
+      .filter({ hasText: "Research needs your attention" }),
+  ).toContainText("AP-test-http-error");
   await expect(
     page.getByLabel("Which provider are you integrating?"),
   ).toHaveValue("GitHub");
@@ -387,13 +421,20 @@ test("research UI handles rate-limit failure, retry, NDJSON events, and guide na
   ).toBeVisible();
   await page.getByText("View observed events", { exact: true }).click();
   await expect(page.getByTestId("research-events").locator("li")).toHaveCount(
-    7,
+    8,
   );
   await expect(
     page.getByRole("link", { name: "Open source: Creating an OAuth app" }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("list", { name: "Discovered documentation" }).locator("li"),
+  ).toHaveCount(1);
   await page.getByRole("link", { name: "Open your guide" }).click();
   await expect(page).toHaveURL(/\/guides\/github/);
+  await page.locator("summary").filter({ hasText: "Your launch path" }).click();
+  await expect(
+    page.getByRole("combobox", { name: "App audience", exact: true }),
+  ).toHaveValue("internal");
   expect(requests).toBe(2);
 });
 
@@ -609,9 +650,12 @@ test("a blocked prerequisite is resolved before another task becomes actionable"
   await expect(
     nextStep.getByRole("heading", { name: "Recovery", exact: true }),
   ).toBeVisible();
-  await expect(nextStep).toContainText("No step-specific source was recorded.");
+  await expect(nextStep).toContainText(
+    "Ask the product owner which resources and users must be supported.",
+  );
+  await expect(nextStep).toContainText("Responsible: Integration developer");
   await expect(
-    nextStep.getByRole("link", { name: "Open related documentation" }),
+    nextStep.getByRole("link", { name: "Open step documentation" }),
   ).toHaveAttribute("href", /^https:\/\/docs\.github\.com\//);
   await nextStep
     .getByRole("button", { name: "Read recovery guidance", exact: true })

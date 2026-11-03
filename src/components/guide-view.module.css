@@ -1052,3 +1052,127 @@
     transition: none;
   }
 }
+
+.launchPathDisclosure {
+  margin-top: 24px;
+}
+.launchPathBody {
+  padding: 0 24px 24px;
+}
+.snapshotContext {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.snapshotContext h3 {
+  font-size: 13px;
+  margin: 0 0 12px;
+}
+.snapshotContext dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 24px;
+  margin: 0 0 12px;
+}
+.snapshotContext dt {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.snapshotContext dd {
+  font-size: 13px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.snapshotContext p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted);
+  margin: 0;
+}
+.pathSummary {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+  margin-left: 12px;
+}
+.blockerField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 550;
+  margin-top: 12px;
+}
+.blockerField textarea,
+.blockerField input {
+  width: 100%;
+  min-height: 44px;
+  background: var(--canvas);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 13px;
+}
+.blockerField textarea {
+  min-height: 82px;
+  resize: vertical;
+}
+.effortBreakdown {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+.effortBreakdown > div {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+.effortBreakdown dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.effortBreakdown dd {
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 550;
+}
+.planningLabel {
+  font-size: 11px;
+  color: var(--amber);
+  line-height: 1.7;
+  margin-bottom: 8px;
+}
+.planningAssumptions {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin: 0 0 16px;
+}
+.planningAssumptions summary {
+  cursor: pointer;
+  color: var(--brand);
+}
+.planningAssumptions ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+.planningAssumptions li + li {
+  margin-top: 8px;
+}
+@media (max-width: 600px) {
+  .launchPathBody {
+    padding: 0 16px 16px;
+  }
+  .pathSummary {
+    display: none;
+  }
+  .snapshotContext dl {
+    grid-template-columns: 1fr;
+  }
+}

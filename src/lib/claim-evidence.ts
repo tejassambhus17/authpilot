@@ -1,4 +1,9 @@
 import type { Claim, Guide, GuideContent } from "./schema";
+import {
+  applyProviderCorrections,
+  isAuditedFigmaSnapshot,
+  isManualCorrectionClaim,
+} from "./provider-corrections";
 
 export function collectClaims(content: GuideContent) {
   return [
@@ -35,6 +40,8 @@ export function guideForReading(guide: Guide): Guide {
   const result = structuredClone(guide);
   let changed = 0;
   for (const { section, claim } of collectClaims(result)) {
+    if (isAuditedFigmaSnapshot(result) && isManualCorrectionClaim(claim))
+      continue;
     const lastSourceFetch = Math.max(
       0,
       ...(claim.evidence || []).map((item) => {
@@ -79,5 +86,5 @@ export function guideForReading(guide: Guide): Guide {
     result.warnings.push(
       "Safety view: unsupported or inconsistent claim-evidence records are shown as unknown. The stored snapshot has not been overwritten; research again to obtain current passage checks.",
     );
-  return result;
+  return applyProviderCorrections(result);
 }
