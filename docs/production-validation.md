@@ -1,6 +1,6 @@
 # Production deployment — 4 November 2026
 
-Dates in this report use Asia/Calcutta; retained event files use UTC. The owner explicitly authorized deployment, signed in to Vercel/Turso, approved the database credential, and approved transferring the existing OpenAI key and a new research gate into Vercel production secrets. No Git push was performed.
+Dates in this report use Asia/Calcutta; retained event files use UTC. The owner explicitly authorized deployment, signed in to Vercel/Turso, approved the database credential, and approved transferring the existing OpenAI key and a new research gate into Vercel production secrets. The initial deployment used the CLI without a Git push; the subsequent GitHub connection is recorded below.
 
 Public URL: [authpilot-navy.vercel.app](https://authpilot-navy.vercel.app).
 
@@ -12,7 +12,7 @@ Public URL: [authpilot-navy.vercel.app](https://authpilot-navy.vercel.app).
 - The approved database token has a **90-day lifetime**. Rotate it before expiry and update both local configuration and Vercel production secrets, then redeploy. No paid plan or custom domain was purchased.
 - OpenAI, Turso and research-access tokens remain server-only. `.vercelignore` excludes local `.env` files, databases, runtimes, review artifacts and generated builds. Secrets were transferred through CLI stdin rather than command arguments or chat. The generated `RESEARCH_ACCESS_TOKEN` is in ignored `.env.local`; provide only that value privately to reviewers who need live research.
 - Automatic approval review initially rejected the bundled secret transfer because the prior approval named only Turso. After the owner explicitly authorized the other two secrets, configuration succeeded. No secret transfer occurred in the rejected command.
-- Automatic GitHub linking failed. Direct CLI deployment succeeded; GitHub-triggered deployments are not configured. Local commits were preserved on `main`, without pushing.
+- Initial automatic GitHub linking failed because the GitHub App was not installed. Direct CLI deployment succeeded. The owner subsequently authorized a Git push and GitHub connection, then personally approved installation of the official Vercel App for **only** `tejassambhus17/authpilot`. Vercel project metadata now confirms the linked repository and production branch `main`. Latest code through `ec9adcc` was pushed and its remote SHA verified before the documentation follow-up. Future pushes to `main` use the existing production secrets and URL; no manual CLI deploy is needed. The documentation follow-up push is used to verify a Git-triggered build, checking its GitHub commit SHA and READY state in Vercel.
 
 ## Executed public checks
 

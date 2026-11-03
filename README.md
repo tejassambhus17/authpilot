@@ -152,7 +152,7 @@ Allow **2–3 minutes of narration**; a real research request may take longer. K
 5. Run the configuration checker in the intended environment. Open `/api/health`, then verify real model access, remote database connectivity, cold-start persistence, unfamiliar-provider research, and a fresh-session share. Health reports configuration only, with `connectivityVerified: false`.
 6. Add the actual hosted URL at the top of this README only after it exists and has been tested. Follow [deployment readiness](docs/deployment-readiness.md) and retain any unexecuted checks.
 
-The current hosted deployment was created through the Vercel CLI after owner authorization and uses Turso for durable storage. GitHub auto-deployment is not connected. Fresh installations still require their own Vercel project, server secrets and database. See [production validation](docs/production-validation.md) for the deployed commit, real checks, retained failure and credential-rotation requirements.
+The hosted deployment uses Turso for durable storage. Vercel is connected to [tejassambhus17/authpilot](https://github.com/tejassambhus17/authpilot), with `main` as the production branch: pushes to `main` automatically build and deploy to the existing production URL. The official Vercel GitHub App is restricted to this repository. Fresh installations still require their own Vercel project, server secrets and database. See [production validation](docs/production-validation.md) for real checks, retained failures and credential-rotation requirements.
 
 ## Trade-offs and limits
 
