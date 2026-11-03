@@ -8,6 +8,10 @@ Built as a focused working slice of the APM Integrations take-home. A provider O
 
 Use Node.js **22.12 or newer** (Node 24 recommended) and npm. The application and verification tools share this supported baseline.
 
+`npm run runtime` shows the Node version used by AuthPilot. The npm scripts select a supported runtime independently of an older Node used to start npm: `AUTHPILOT_NODE_BINARY` takes precedence, followed by the current supported Node, then an ignored project-local `.runtime/node.exe` on Windows (`.runtime/node` elsewhere). The launcher does not download software or change the system Node installation. Fresh checkouts should install Node 24 or explicitly select an existing supported executable.
+
+If CSS compilation reports `ERR_REQUIRE_ESM` for `magic-string`, an older Node process is loading the Tailwind PostCSS plugin. Stop that dev server, check `npm run runtime`, and restart with `npm run dev`. Changing the font stylesheet or editing `node_modules` will not fix the runtime mismatch.
+
 ```sh
 npm install
 ```
@@ -98,7 +102,7 @@ npm run test:e2e
 
 `npm run check` runs the first four commands. Unit tests cover validation, evidence integrity, research failure handling, and persistence. The browser journey covers provider search, a usable guide, checklist status and reload persistence, Markdown export, theme changes, and an empty state. See [testing notes](docs/testing.md).
 
-**Verified:** 77 unit tests and all 8 browser journeys passed. A final genuine **Linear** run with GPT-5.5 selected **10 official sources**, persisted after reload, and exported Markdown. An independent bounded source audit confirmed the sampled lifecycle and approval distinctions. Earlier model errors and corrective work remain visible in [the live validation record](docs/live-validation.md), with an [unaltered final example](docs/examples/linear-final.md).
+**Verified:** 80 unit tests and all 8 browser journeys passed. A final genuine **Linear** run with GPT-5.5 selected **10 official sources**, persisted after reload, and exported Markdown. An independent bounded source audit confirmed the sampled lifecycle and approval distinctions. Earlier model errors and corrective work remain visible in [the live validation record](docs/live-validation.md), with an [unaltered final example](docs/examples/linear-final.md).
 
 You need your own server-side OpenAI key to use live research. Automated transport and HTTP fixtures test failures and orchestration without providing a production mock mode. No provider OAuth app was registered or approved during verification.
 

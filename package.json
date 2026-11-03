@@ -3,14 +3,15 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --webpack",
-    "build": "next build --webpack",
-    "start": "next start",
-    "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:e2e": "playwright test",
+    "dev": "node scripts/run-with-node.mjs node_modules/next/dist/bin/next dev --webpack",
+    "build": "node scripts/run-with-node.mjs node_modules/next/dist/bin/next build --webpack",
+    "start": "node scripts/run-with-node.mjs node_modules/next/dist/bin/next start",
+    "lint": "node scripts/run-with-node.mjs node_modules/eslint/bin/eslint.js .",
+    "typecheck": "node scripts/run-with-node.mjs node_modules/typescript/bin/tsc --noEmit",
+    "test": "node scripts/run-with-node.mjs node_modules/vitest/vitest.mjs run",
+    "test:watch": "node scripts/run-with-node.mjs node_modules/vitest/vitest.mjs",
+    "test:e2e": "node scripts/run-with-node.mjs node_modules/@playwright/test/cli.js test",
+    "runtime": "node scripts/run-with-node.mjs --version",
     "check": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "dependencies": {
