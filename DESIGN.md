@@ -77,7 +77,7 @@ typography:
     lineHeight: 1.55
   action:
     fontFamily: "DM Sans Variable, sans-serif"
-    fontSize: "12px"
+    fontSize: "13px"
     fontWeight: 580
     lineHeight: 1.5
 rounded:
@@ -107,7 +107,7 @@ components:
     textColor: "{colors.action-ink}"
     rounded: "{rounded.control}"
     typography: "{typography.action}"
-    padding: "10px 15px"
+    padding: "10px 16px"
   button-primary-hover:
     backgroundColor: "{colors.primary-hover}"
   button-secondary:
@@ -115,13 +115,13 @@ components:
     textColor: "{colors.foreground}"
     rounded: "{rounded.control}"
     typography: "{typography.action}"
-    padding: "10px 15px"
+    padding: "10px 16px"
   button-ghost:
     backgroundColor: "transparent"
     textColor: "{colors.muted}"
     rounded: "{rounded.control}"
     typography: "{typography.action}"
-    padding: "10px 15px"
+    padding: "10px 16px"
   search-field:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.muted}"
@@ -165,7 +165,7 @@ components:
   checklist-panel:
     backgroundColor: "{colors.surface}"
     rounded: "{rounded.content}"
-    padding: "18px"
+    padding: "24px"
   research-evidence-panel:
     backgroundColor: "{colors.surface}"
     rounded: "{rounded.feature}"
@@ -194,6 +194,8 @@ Next-step guidance respects blocked tasks and unmet dependencies. Explicitly ind
 - Actual research events and personal checklist progress with distinct meanings.
 
 Documented on 3 November 2026 from `src/app/globals.css`, the shell and brand components, and the Explore, Library, Research, and Guide components and styles. Visual evidence is recorded under `.impeccable/review/redesign/`: `desktop-explore.png`, `desktop-research-active.png`, `desktop-guide.png`, `desktop-library.png`, and `comparison-reference-implementation.png`, alongside light and mobile captures. These document appearance and observed UI state, not OAuth setup verification.
+
+The same-day desktop polish is reconciled here from the current source: shared action sizing, guide spacing and narrative facts, evidence-inspector reading order, library hierarchy and category labels, and local provider marks. The earlier redesign captures precede this polish; source values below describe the current implementation.
 
 ## Colors
 
@@ -228,16 +230,16 @@ The primary palette is charcoal and violet. Green, amber, and rose have specific
 **Display Font:** Self-hosted DM Sans Variable, with sans-serif fallback.
 **Body Font:** The same family, using weight, scale, tracking, and spacing for hierarchy.
 
-**Character:** Precise and approachable, with tightened sentence-case headings and open technical reading lines. Shared Lucide icons have a consistent stroke (1.7px). The brand is a violet hexagon with a white shield/check. Provider marks use local or inline assets, with a globe fallback for unfamiliar providers.
+**Character:** Precise and approachable, with tightened sentence-case headings and open technical reading lines. Shared Lucide icons have a consistent stroke (1.7px). The brand is a violet hexagon with a white shield/check. Provider marks use local or inline assets, including local Notion, Asana, Dropbox, and Linear assets, with a globe fallback for unfamiliar providers.
 
 ### Hierarchy
 
 - **Display:** The recorded role is Explore's responsive headline. Its contextual overrides are 39px below the compact-desktop boundary, 36px below the navigation boundary, and 34px on narrow mobile. The general page-heading default is 36px/1.17 at weight 650; Library uses 31px, while Guide and Research use smaller contextual clamps.
 - **Headline:** General sections use the recorded role; Guide sections use 21px, then 20px on narrow screens. Dense panel headings use 14–15px.
-- **Title:** General third-level headings use the recorded role. Provider list titles use 14px and 13px on narrow mobile.
+- **Title:** General third-level headings use the recorded role. Library record titles use 16px, then 14px below the navigation boundary and 13px on narrow mobile.
 - **Body:** The recorded role is the application default. Supporting copy uses contextual 12–15px sizes with more open line height.
-- **Reading:** Requirement claims use the recorded role inside a maximum measure of 75ch, retained on mobile. Section summaries use 14px/1.85.
-- **Label and action:** Research labels and shared actions use the recorded roles. Source classification and metadata are compact (9–12px), secondary to readable claims.
+- **Reading:** Requirement claims use the recorded role inside a maximum measure of 75ch, retained on mobile. Narrative overview facts use 14px/1.7 across their full fact-column width. Section summaries use 14px/1.85.
+- **Label and action:** Research labels and shared actions use the recorded roles. Library metadata uses 12px and origin badges 11px. Other source classification and metadata are compact (9–12px), secondary to readable claims.
 
 ### Named Rules
 
@@ -247,13 +249,13 @@ The primary palette is charcoal and violet. Green, amber, and rose have specific
 
 The desktop application is a centered frame (maximum width 1480px), with an outer gutter (22px), a fine border, and rounded corners. The top bar (minimum height 72px) uses a three-column grid: brand, centered navigation, and working theme action. General content is centered within 1240px, including horizontal padding (42px). Explore uses a 1210px maximum with 44px padding; Research uses `min(1160px, calc(100% - 72px))`.
 
-Explore centers its headline, supporting copy, prominent research field (maximum width 850px), and genuine example-guide links. Three feature summaries form one desktop row. Library view/category filters occupy a local rail (214px) beside actual records; this rail belongs only to the library. Records separate their open link from save and share controls.
+Explore centers its headline, supporting copy, prominent research field (maximum width 850px), and genuine example-guide links. Three feature summaries form one desktop row. Library view/category filters occupy a local rail (232px), with a 24px gap and rail padding beside actual records; this rail belongs only to the library. Records separate their open link from save and share controls. Display category labels group related stored categories without changing their original searchable text.
 
-The Guide overview has three desktop columns: integration facts, setup checklist, and next-action/approval panels. Below 1199px it becomes two columns with the next-action rail across both. At 800px it becomes one reading column, with supporting panels in a two-column row until 480px. Detailed sections use a flexible reading column and supporting rail (260px), stacking below 800px. Six tabs scroll inside their own strip instead of widening the page.
+The Guide overview has three desktop columns: integration facts, setup checklist, and next-action/approval panels, separated by 24px. Compact facts retain label/value columns; narrative hands-on effort and approval/wait facts stack label above text within the full fact-column width. Below 1199px the overview becomes two columns with the next-action rail across both. At 800px it becomes one reading column, with supporting panels in a two-column row until 480px. Detailed sections use a flexible reading column and supporting rail (260px), stacking below 800px. Six tabs scroll inside their own strip instead of widening the page.
 
 Research places its actual-event timeline beside the returned-source panel in equal flexible columns, with a form above and collapsible event journal below. It becomes one column at 760px, preserving timeline-before-evidence reading order. Source lists scroll within their panel; long URLs wrap or truncate inside their own controls.
 
-Spacing uses the recorded rhythm with contextual intermediate values for individual controls. Responsive boundaries are wide desktop (1600px), compact frame (1160px), mobile navigation/library rail (820px), narrow frame/Explore (560px), Guide (1199px, 800px, 480px), and Research (1100px, 760px, 420px). At 1160px the outer gutter is 14px and general page padding is 30px. At 820px desktop navigation becomes a modal menu and library filters wrap above records. At 560px the frame is edge-to-edge without an outer border or radius, the top bar is 65px, content has 20px side padding, feature summaries stack, and the Explore action spans the field width. Library record actions move beneath provider identity.
+Spacing uses the recorded rhythm with contextual intermediate values for individual controls. Shared CSS spacing properties name the recurring control (8px), compact (12px), content (16px), panel (24px), and section (32px) steps. The guide's desktop tabs sit 24px below metadata; empty clipboard feedback adds no margin. Responsive boundaries are wide desktop (1600px), compact frame (1160px), mobile navigation/library rail (820px), narrow frame/Explore (560px), Guide (1199px, 800px, 480px), and Research (1100px, 760px, 420px). At 1160px the outer gutter is 14px and general page padding is 30px; the library rail is 193px with a 23px gap. At 820px desktop navigation becomes a modal menu and library filters wrap above records. At 560px the frame is edge-to-edge without an outer border or radius, the top bar is 65px, content has 20px side padding, feature summaries stack, and the Explore action spans the field width. Library record actions move beneath provider identity.
 
 ## Elevation & Depth
 
@@ -271,13 +273,13 @@ Controls use modest corners (7px); search fields and notices use 8px. Evidence b
 
 ### Buttons
 
-Compact, explicit actions. Shared buttons have a minimum height (44px), a fine border, the control radius, and recorded padding. Primary uses action violet and white; secondary uses a soft surface and foreground; ghost uses a transparent ground and muted text. The small variant uses 11px type and 8px 12px padding while preserving the shared minimum height. Hover adjusts background and border over 0.15s ease-out. Disabled controls use a not-allowed cursor and opacity (0.55). Saved controls use violet wash and readable violet.
+Compact, explicit actions. Shared buttons have a minimum height (44px), a fine border, the control radius, recorded padding, and 13px labels. Direct SVG icons are 16px with an 8px gap. Primary uses action violet and white; secondary uses a soft surface and foreground; ghost uses a transparent ground and muted text. The shared small variant retains the same size and padding. Desktop Explore and Research form primary actions have a minimum height (48px); Explore uses contextual horizontal padding (22px) and a 45px minimum on narrow mobile. Narrow Guide toolbar actions retain their contextual 11px labels and 10px horizontal padding. Hover adjusts background and border over 0.15s ease-out. Disabled controls use a not-allowed cursor and opacity (0.55). Saved controls use violet wash and readable violet.
 
 ### Inputs / Fields
 
 Explore's main field uses a soft surface, violet-mixed border, provider name/URL input, and embedded primary button. The input is 44px high and the desktop form has a minimum height (62px). Narrow mobile places the button on its own full-width row. A programmatic label, associated help/error text, and `aria-invalid` communicate purpose and validation.
 
-Research uses a visible label and canvas-ground field with a minimum-height input (44px), contextual help, and actual readiness feedback. Library search uses a surface field (minimum height 43px, width up to 360px). Field wrappers have a 2px readable-violet focus outline with 3px offset. Preserve native input, Enter submission, select, checkbox, and disclosure behavior.
+Research uses a visible label and canvas-ground field (minimum height 48px) with a minimum-height input (46px), contextual help, and actual readiness feedback. Library search uses a surface field (minimum height 43px, width up to 360px) and 13px input text. Field wrappers have a 2px readable-violet focus outline with 3px offset. Preserve native input, Enter submission, select, checkbox, and disclosure behavior.
 
 ### Navigation
 
@@ -291,7 +293,7 @@ Evidence chips combine an icon, explicit label, and compact tinted ground. Label
 
 ### Cards / Containers
 
-Feature summaries, library records, checklist, and evidence panels share a flat surface, fine border, and modest radius. Typical internal padding is 16–22px, reduced on narrow screens. Use a tinted surface for the next-action panel and current research stage. Reading claims use whitespace and dividers instead of a card around every sentence.
+Feature summaries, library records, checklist, and evidence panels share a flat surface, fine border, and modest radius. Typical internal padding is 16–24px, reduced on narrow screens. Checklist and next-action panels use the 24px panel step on desktop. Use a tinted surface for the next-action panel and current research stage. Reading claims use whitespace and dividers instead of a card around every sentence.
 
 ### Guide tabs and personal progress
 
@@ -301,7 +303,7 @@ The checklist shows this browser's completed count, native checkboxes and status
 
 ### Claim evidence inspector
 
-“Why this requirement?” opens a labelled Radix modal inspection panel with focus trapping, Escape dismissal, focus return, and a 44px close control. The panel fits within mobile viewports and scrolls its own reading area. It separates exact guide claims and applicable conditions from matched source passages and AI assessments. Source summaries are explicitly not quotations; missing or conflicting support, retrieval dates, and provider-domain uncertainty stay visible. A matched passage proves text presence, not factual entailment or a completed OAuth setup.
+“Why this requirement?” opens a labelled Radix modal inspection panel with focus trapping, Escape dismissal, focus return, and a 44px close control. The panel fits within mobile viewports and scrolls its own reading area. It presents the exact claim and applicable conditions, then compact verification status, its exact check date, and a caveat before supporting passages. Extended assessment details follow the passages; documentation links, retained summaries, retrieval metadata, and their original dates remain available below. Source summaries are explicitly not quotations; missing or conflicting support and provider-domain uncertainty stay visible. A matched passage proves text presence, not factual entailment or a completed OAuth setup.
 
 ### Research timeline and evidence
 

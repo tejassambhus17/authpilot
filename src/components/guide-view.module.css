@@ -7,7 +7,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 .backLink {
   display: inline-flex;
@@ -29,7 +29,7 @@
 .header {
   display: flex;
   align-items: flex-start;
-  gap: 20px;
+  gap: 24px;
 }
 .providerIcon {
   width: 62px;
@@ -57,8 +57,8 @@
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-  margin-top: 17px;
-  font-size: 11px;
+  margin-top: 16px;
+  font-size: 12px;
   color: var(--muted);
 }
 .metadata > span,
@@ -85,16 +85,19 @@
   color: var(--brand);
 }
 .feedback {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--brand);
-  margin-top: 10px;
-  min-height: 18px;
+  margin-top: 16px;
+  line-height: 1.6;
+}
+.feedback:empty {
+  margin-top: 0;
 }
 .tabs {
   display: flex;
   align-items: stretch;
   border-bottom: 1px solid var(--border);
-  margin-top: 18px;
+  margin-top: 24px;
   gap: 12px;
   overflow-x: auto;
   scroll-margin-top: 90px;
@@ -123,7 +126,7 @@
   font-weight: 580;
 }
 .tabPanel {
-  padding-top: 28px;
+  padding-top: 24px;
   min-width: 0;
 }
 .tabPanel:focus-visible {
@@ -143,10 +146,10 @@
       0.8fr
     );
   align-items: start;
-  gap: 22px;
+  gap: 24px;
 }
 .overviewIntro {
-  margin: 11px 0 20px;
+  margin: 12px 0 24px;
   font-size: 14px;
   line-height: 1.75;
 }
@@ -168,8 +171,17 @@
 .factRow:last-child {
   border-bottom: 0;
 }
+.factRow.factNarrative {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+.factRow.factNarrative dd {
+  padding-left: 0;
+  font-size: 14px;
+  line-height: 1.7;
+}
 .factRow dt {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 550;
   display: flex;
   align-items: center;
@@ -202,7 +214,7 @@
   display: block;
   color: var(--muted);
   margin-top: 3px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .claimEvidence {
   display: flex;
@@ -220,7 +232,7 @@
   background: var(--amber-bg);
 }
 .stepRecovery strong {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 550;
   color: var(--amber);
 }
@@ -246,7 +258,7 @@
   margin: 16px 0;
 }
 .recoveryInstructions h4 {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   margin-bottom: 5px;
 }
@@ -254,8 +266,8 @@
   margin: 0;
 }
 .nextStepPanel .navigationNote {
-  font-size: 11px;
-  line-height: 1.85;
+  font-size: 12px;
+  line-height: 1.75;
   margin: 12px 0;
   color: var(--muted);
 }
@@ -266,7 +278,7 @@
 }
 .dependencyDetails summary {
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.7;
   color: var(--foreground);
   min-height: 30px;
@@ -277,7 +289,7 @@
   padding: 0;
 }
 .dependencyDetails li {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.8;
   padding: 6px 0;
   display: flex;
@@ -292,12 +304,12 @@
   font-weight: 500;
 }
 .sourceBody > .sourceSummaryLabel {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--brand);
   margin-top: 12px;
 }
 .prerequisites {
-  margin-top: 23px;
+  margin-top: 24px;
 }
 .prerequisites h3 {
   font-size: 15px;
@@ -330,7 +342,7 @@
 .checklist {
   border: 1px solid var(--border);
   border-radius: 9px;
-  padding: 18px;
+  padding: 24px;
   background: var(--surface);
   min-width: 0;
 }
@@ -344,13 +356,13 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.01em;
 }
 .checklistHeading > span {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -382,7 +394,7 @@
 }
 .checklistItem {
   border-bottom: 1px solid var(--border);
-  padding: 13px 0;
+  padding: 16px 0;
 }
 .checklistItem:last-child {
   border-bottom: 0;
@@ -424,7 +436,7 @@
   padding: 5px 7px;
   min-height: 32px;
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
   max-width: 100%;
   cursor: pointer;
 }
@@ -433,14 +445,14 @@
   align-items: center;
   gap: 5px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.6;
 }
 .personalNote {
   border-top: 1px solid var(--border);
   padding-top: 13px;
   margin-top: 9px;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.8;
 }
 .allStepsButton {
@@ -450,7 +462,7 @@
   border-radius: 7px;
   background: var(--surface);
   color: var(--foreground);
-  font-size: 12px;
+  font-size: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -463,22 +475,22 @@
 .nextRail {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
   min-width: 0;
 }
 .nextStepPanel {
   border: 1px solid color-mix(in srgb, var(--brand) 38%, var(--border));
   border-radius: 9px;
-  padding: 20px;
+  padding: 24px;
   background: var(--accent);
 }
 .nextStepPanel > h2,
 .reviewPanel > h2 {
-  font-size: 14px;
+  font-size: 15px;
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 15px;
+  margin-bottom: 16px;
   letter-spacing: -0.015em;
 }
 .nextStepPanel > h2 svg {
@@ -493,29 +505,29 @@
   margin-bottom: 10px;
 }
 .nextStepPanel > p {
-  font-size: 12px;
-  line-height: 1.85;
-  margin-bottom: 18px;
+  font-size: 13px;
+  line-height: 1.75;
+  margin-bottom: 16px;
 }
 .nextStepPanel > a {
   width: 100%;
   white-space: normal;
-  font-size: 12px;
+  font-size: 13px;
 }
 .nextStepPanel > button {
   margin-top: 10px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .reviewPanel {
   border: 1px solid var(--border);
   border-radius: 9px;
-  padding: 19px;
+  padding: 24px;
   background: var(--surface);
 }
 .reviewPanel > p {
-  font-size: 12px;
-  line-height: 1.9;
-  margin-bottom: 11px;
+  font-size: 13px;
+  line-height: 1.75;
+  margin-bottom: 12px;
 }
 .researchBoundary {
   display: flex;
@@ -525,17 +537,17 @@
   color: var(--muted);
 }
 .researchBoundary p {
-  font-size: 11px;
-  line-height: 1.9;
+  font-size: 12px;
+  line-height: 1.75;
 }
 .researchBoundary svg {
   margin-top: 4px;
 }
 .conditions {
-  margin-top: 38px;
+  margin-top: 32px;
   max-width: 83ch;
   border-top: 1px solid var(--border);
-  padding-top: 27px;
+  padding-top: 24px;
 }
 .conditions > h2 {
   display: flex;
@@ -550,8 +562,8 @@
   max-width: 75ch;
 }
 .guideSection {
-  padding-bottom: 30px;
-  margin-top: 30px;
+  padding-bottom: 32px;
+  margin-top: 32px;
   border-bottom: 1px solid var(--border);
   scroll-margin-top: 100px;
 }
@@ -585,7 +597,7 @@
   overflow-wrap: anywhere;
 }
 .disclosure {
-  margin-top: 23px;
+  margin-top: 24px;
   border: 1px solid var(--border);
   border-radius: 9px;
   background: var(--surface);
@@ -655,7 +667,7 @@
 .detailGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 260px;
-  gap: 45px;
+  gap: 32px;
   align-items: start;
 }
 .detailGrid > div {
@@ -675,7 +687,7 @@
   max-width: 65ch;
 }
 .expandedChecklist {
-  margin-bottom: 38px;
+  margin-bottom: 32px;
 }
 .expandedChecklist .checklistHeading h2 {
   font-size: 16px;
@@ -845,7 +857,7 @@
 @media (max-width: 1199px) {
   .overviewGrid {
     grid-template-columns: minmax(0, 1.1fr) minmax(290px, 0.9fr);
-    gap: 25px;
+    gap: 24px;
   }
   .nextRail {
     grid-column: 1 / -1;

@@ -1,6 +1,13 @@
 import { Github, Globe2, Hexagon, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 
+const providerAssets = new Map([
+  ["notion", "/provider-icons/notion.ico"],
+  ["asana", "/provider-icons/asana.ico"],
+  ["dropbox", "/provider-icons/dropbox.ico"],
+  ["linear", "/provider-icons/linear.ico"],
+]);
+
 export function BrandMark({ size = 30 }: { size?: number }) {
   return (
     <span
@@ -25,11 +32,12 @@ export function ProviderIcon({
   provider: string;
   size?: number;
 }) {
-  const name = provider.toLowerCase();
-  if (name === "notion")
+  const name = provider.trim().toLowerCase();
+  const asset = providerAssets.get(name);
+  if (asset)
     return (
       <Image
-        src="/provider-icons/notion.ico"
+        src={asset}
         alt=""
         width={size}
         height={size}

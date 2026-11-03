@@ -7,7 +7,6 @@ import {
   ArrowUpRight,
   BookOpenCheck,
   Link2,
-  Search,
   Share2,
   ShieldCheck,
   Sparkles,
@@ -162,14 +161,6 @@ export function Directory({ guides }: { guides: Guide[] }) {
         <Link href="/methodology">
           How it works
           <ArrowRight size={13} />
-        </Link>
-      </div>
-      <div className="explore-library-link">
-        <Search size={15} />
-        <span>Looking for a guide you’ve already researched?</span>
-        <Link href="/guides?view=recent">
-          Open your library
-          <ArrowRight size={14} />
         </Link>
       </div>
     </div>

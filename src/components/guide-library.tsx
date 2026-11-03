@@ -19,6 +19,7 @@ import {
 import { useState } from "react";
 import type { Guide } from "@/lib/schema";
 import { useSavedGuides } from "@/lib/saved-guides";
+import { guideCategory } from "@/lib/guide-category";
 import { ProviderIcon } from "./brand";
 import { SaveGuideButton } from "./save-guide-button";
 
@@ -63,12 +64,14 @@ export function GuideLibrary({
         ? guide.origin === "researched"
         : true,
   );
-  const categories = [...new Set(base.map((guide) => guide.category))].sort();
+  const categories = [
+    ...new Set(base.map((guide) => guideCategory(guide.category))),
+  ].sort();
   const filtered = base
     .filter(
       (guide) =>
-        (!tag || guide.category === tag) &&
-        `${guide.provider} ${guide.description} ${guide.category}`
+        (!tag || guideCategory(guide.category) === tag) &&
+        `${guide.provider} ${guide.description} ${guide.category} ${guideCategory(guide.category)}`
           .toLowerCase()
           .includes(search.toLowerCase()),
     )
@@ -169,7 +172,11 @@ export function GuideLibrary({
                 <span className="category-dot" />
                 <span className="category-label">{category}</span>
                 <span>
-                  {base.filter((guide) => guide.category === category).length}
+                  {
+                    base.filter(
+                      (guide) => guideCategory(guide.category) === category,
+                    ).length
+                  }
                 </span>
               </button>
             ))}
@@ -249,7 +256,9 @@ export function GuideLibrary({
                         Updated {dateLabel(guide.updatedAt)}
                         <span>·</span>
                         {guide.sources.length} sources<span>·</span>
-                        {guide.category}
+                        <span title={guide.category}>
+                          {guideCategory(guide.category)}
+                        </span>
                       </p>
                     </div>
                   </Link>

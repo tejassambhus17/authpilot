@@ -94,3 +94,39 @@ Local deployment configuration passes; hosted configuration correctly fails whil
 
 The complete five-section finish report is [reviewer-report.md](.impeccable/review/final/reviewer-report.md). No additional visual change is required by this review.
 
+---
+
+## Desktop UI refinement — 3 November 2026
+
+**Independent review disposition: ship.** No actionable P0/P1/P2 finding remains in the approved desktop polish. The earlier redesign and engineering reviews above retain their original evidence and counts.
+
+The finish reviewer opened all five unchanged 1440×900 before captures from `.impeccable/review/desktop-ui/`, the corresponding after captures from `.impeccable/review/desktop-polish/`, and the browser-rendered `before-after.png`. The combined comparison displays the unchanged captures at equal 720×450 sizes; the native screenshots govern reading quality. This is a comparison against the accepted desktop refinements, not a new pixel-perfect claim against the original four-screen collage.
+
+| Reviewed after evidence | CSS viewport | State |
+| --- | --- | --- |
+| `01-explore.png`, `02-research.png`, `03-guide.png`, `04-library.png`, `05-inspector.png` | 1440×900 | Dark Explore, Research ready, Asana Overview, Library, matched-passage inspector |
+| `1280-guide.png`, `1280-library.png` | 1280×900 | Compact desktop Guide/Library |
+| `1920-guide.png`, `1920-library.png` | 1920×900 | Wide desktop Guide/Library |
+| `light-guide.png`, `light-library.png`, `light-inspector.png` | 1440×900 | Existing light theme with the same refinements |
+
+All twelve after captures and the combined comparison were opened. Their metadata records **zero horizontal page overflow, page errors, console errors, and research POSTs**. Inspector images intentionally capture the modal state. No new mobile design direction or fresh paid research was required for this presentation pass.
+
+| Accepted refinement | Final evidence |
+| --- | --- |
+| Consistent actions | Guide toolbar: 44px height, 13px labels, 16px horizontal padding, 16px SVGs, 8px gaps. Research submissions: 48px. Research again is secondary; step documentation remains violet. |
+| Header spacing | Metadata-to-tabs gap 46px → **24px**; empty accessible feedback node **0px high**. |
+| Readable long facts | Values use the full fact-column content width, approximately **400px**, with **14px/23.8px** text, an 8px label gap, and 16px row padding. |
+| Library hierarchy | Titles/metadata/origin badges 14/10/9px → **16/12/11px**; grouped display categories fit the rail while preserving original stored/searchable text. |
+| Earlier source passage | Supporting-passages heading approximately y813 → **y606**; first quote fully visible at **y708–767**. Conditions and the verification caveat remain before the quote; extended assessment follows. |
+| Research alignment | Heading offset 20px → **0.5px**, using 60px heading rows and 76px minimum pending stages. |
+| Identity and cleanup | New official Asana/Dropbox/Linear marks and existing Notion mark visibly decode; redundant Explore library prompt removed. Before/after pixel samples retain canvas **#0B0D12** and outer ground **#07090E**. |
+
+`DESIGN.md` and `.impeccable/design.json` were reconciled to the implementation. The documenter reports successful canonical parsing, section/token/reference checks, matching current colors, preserved 15px/1.8 requirement text, and ten rendered component snippets. README, project context, testing notes, and [desktop polish](docs/desktop-polish.md) record the current pass separately from historical validation.
+
+Final execution results reported by the implementation/QA packet: **TypeScript, lint, production build, 195 unit tests across 13 files, and 20/20 Edge browser journeys passed**. New behavioral checks concern category display/filtering; existing narrow-screen, keyboard, theme, evidence, sharing, export, checklist, bookmark, and research-fixture/error journeys were retained. The finish reviewer did not independently rerun those tests.
+
+No backend/evidence contract or provider-policy content changed. This pass made no paid research request, push, or deployment and does not establish OAuth setup success, provider approval, full assistive-technology certification, or hosted behavior. Earlier genuine research, failures, and corrections remain in their original validation records.
+
+The five-section desktop finish report is [reviewer-report.md](.impeccable/review/desktop-polish/reviewer-report.md). No further visual fix is required by this review.
+
+final result: passed

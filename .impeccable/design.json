@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-03T14:35:31.183761Z",
+  "generatedAt": "2026-11-03T16:05:43.454Z",
   "title": "Design System: AuthPilot",
   "extensions": {
     "colorMeta": {
@@ -712,25 +712,25 @@
       "name": "Primary button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Shipped shared button variant; minimum height is 44px.",
+      "description": "Shared desktop action: 44px minimum height, 13px label, 16px horizontal padding, and 16px icons with an 8px gap. Form Research actions use a contextual 48px minimum.",
       "html": "<button type=\"button\" class=\"ds-button-primary\">Research</button>",
-      "css": ".ds-button-primary{font-family:\"DM Sans Variable\",sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 15px;border:1px solid var(--border,#272b36);border-radius:7px;background:var(--surface-soft,#191d28);color:var(--foreground,#f3f4f6);font-size:12px;font-weight:580;line-height:1.5;white-space:nowrap;cursor:pointer;transition:background .15s ease-out,border-color .15s ease-out;}.ds-button-primary{background:var(--primary,#7c3aed);color:#fff;border-color:transparent;}.ds-button-primary:hover{background:var(--primary-hover,#8b4df1);border-color:transparent;}.ds-button-primary:focus-visible{outline:3px solid var(--brand,#a78bfa);outline-offset:4px;}.ds-button-primary:disabled{cursor:not-allowed;opacity:.55;}@media(prefers-reduced-motion:reduce){.ds-button-primary{transition:none;}}"
+      "css": ".ds-button-primary{font-family:\"DM Sans Variable\",sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:var(--space-control,8px);min-height:44px;padding:10px var(--space-content,16px);border:1px solid var(--border,#272b36);border-radius:7px;background:var(--surface-soft,#191d28);color:var(--foreground,#f3f4f6);font-size:13px;font-weight:580;line-height:1.5;white-space:nowrap;cursor:pointer;transition:background .15s ease-out,border-color .15s ease-out;}.ds-button-primary{background:var(--primary,#7c3aed);color:#fff;border-color:transparent;}.ds-button-primary:hover{background:var(--primary-hover,#8b4df1);border-color:transparent;}.ds-button-primary:focus-visible{outline:3px solid var(--brand,#a78bfa);outline-offset:4px;}.ds-button-primary:disabled{cursor:not-allowed;opacity:.55;}@media(prefers-reduced-motion:reduce){.ds-button-primary{transition:none;}}.ds-button-primary>svg{width:16px;height:16px;flex-shrink:0;}"
     },
     {
       "name": "Secondary button",
       "kind": "button",
       "refersTo": "button-secondary",
-      "description": "Shipped shared button variant; minimum height is 44px.",
+      "description": "Shared desktop action: 44px minimum height, 13px label, 16px horizontal padding, and 16px icons with an 8px gap. Form Research actions use a contextual 48px minimum.",
       "html": "<button type=\"button\" class=\"ds-button-secondary\">Share</button>",
-      "css": ".ds-button-secondary{font-family:\"DM Sans Variable\",sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 15px;border:1px solid var(--border,#272b36);border-radius:7px;background:var(--surface-soft,#191d28);color:var(--foreground,#f3f4f6);font-size:12px;font-weight:580;line-height:1.5;white-space:nowrap;cursor:pointer;transition:background .15s ease-out,border-color .15s ease-out;}.ds-button-secondary:hover{border-color:color-mix(in srgb,var(--muted,#a8afbd) 55%,var(--border,#272b36));background:color-mix(in srgb,var(--foreground,#f3f4f6) 5%,var(--surface-soft,#191d28));}.ds-button-secondary:focus-visible{outline:3px solid var(--brand,#a78bfa);outline-offset:4px;}.ds-button-secondary:disabled{cursor:not-allowed;opacity:.55;}@media(prefers-reduced-motion:reduce){.ds-button-secondary{transition:none;}}"
+      "css": ".ds-button-secondary{font-family:\"DM Sans Variable\",sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:var(--space-control,8px);min-height:44px;padding:10px var(--space-content,16px);border:1px solid var(--border,#272b36);border-radius:7px;background:var(--surface-soft,#191d28);color:var(--foreground,#f3f4f6);font-size:13px;font-weight:580;line-height:1.5;white-space:nowrap;cursor:pointer;transition:background .15s ease-out,border-color .15s ease-out;}.ds-button-secondary:hover{border-color:color-mix(in srgb,var(--muted,#a8afbd) 55%,var(--border,#272b36));background:color-mix(in srgb,var(--foreground,#f3f4f6) 5%,var(--surface-soft,#191d28));}.ds-button-secondary:focus-visible{outline:3px solid var(--brand,#a78bfa);outline-offset:4px;}.ds-button-secondary:disabled{cursor:not-allowed;opacity:.55;}@media(prefers-reduced-motion:reduce){.ds-button-secondary{transition:none;}}.ds-button-secondary>svg{width:16px;height:16px;flex-shrink:0;}"
     },
     {
       "name": "Ghost button",
       "kind": "button",
       "refersTo": "button-ghost",
-      "description": "Shipped shared button variant; minimum height is 44px.",
+      "description": "Shared desktop action: 44px minimum height, 13px label, 16px horizontal padding, and 16px icons with an 8px gap. Form Research actions use a contextual 48px minimum.",
       "html": "<button type=\"button\" class=\"ds-button-ghost\">Clear filters</button>",
-      "css": ".ds-button-ghost{font-family:\"DM Sans Variable\",sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 15px;border:1px solid var(--border,#272b36);border-radius:7px;background:var(--surface-soft,#191d28);color:var(--foreground,#f3f4f6);font-size:12px;font-weight:580;line-height:1.5;white-space:nowrap;cursor:pointer;transition:background .15s ease-out,border-color .15s ease-out;}.ds-button-ghost{background:transparent;border-color:transparent;color:var(--muted,#a8afbd);}.ds-button-ghost:hover{border-color:color-mix(in srgb,var(--muted,#a8afbd) 55%,var(--border,#272b36));background:color-mix(in srgb,var(--foreground,#f3f4f6) 5%,var(--surface-soft,#191d28));}.ds-button-ghost:focus-visible{outline:3px solid var(--brand,#a78bfa);outline-offset:4px;}.ds-button-ghost:disabled{cursor:not-allowed;opacity:.55;}@media(prefers-reduced-motion:reduce){.ds-button-ghost{transition:none;}}"
+      "css": ".ds-button-ghost{font-family:\"DM Sans Variable\",sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:var(--space-control,8px);min-height:44px;padding:10px var(--space-content,16px);border:1px solid var(--border,#272b36);border-radius:7px;background:var(--surface-soft,#191d28);color:var(--foreground,#f3f4f6);font-size:13px;font-weight:580;line-height:1.5;white-space:nowrap;cursor:pointer;transition:background .15s ease-out,border-color .15s ease-out;}.ds-button-ghost{background:transparent;border-color:transparent;color:var(--muted,#a8afbd);}.ds-button-ghost:hover{border-color:color-mix(in srgb,var(--muted,#a8afbd) 55%,var(--border,#272b36));background:color-mix(in srgb,var(--foreground,#f3f4f6) 5%,var(--surface-soft,#191d28));}.ds-button-ghost:focus-visible{outline:3px solid var(--brand,#a78bfa);outline-offset:4px;}.ds-button-ghost:disabled{cursor:not-allowed;opacity:.55;}@media(prefers-reduced-motion:reduce){.ds-button-ghost{transition:none;}}.ds-button-ghost>svg{width:16px;height:16px;flex-shrink:0;}"
     },
     {
       "name": "Library search",
@@ -738,15 +738,15 @@
       "refersTo": "search-field",
       "description": "Surface search field from the actual guide library.",
       "html": "<div class=\"ds-search\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.34-4.34\"/></svg><input type=\"search\" aria-label=\"Search guides\" placeholder=\"Search guides…\"/></div>",
-      "css": ".ds-search{font-family:\"DM Sans Variable\",sans-serif;display:flex;align-items:center;gap:9px;min-height:43px;padding:0 13px;border:1px solid var(--border,#272b36);border-radius:8px;background:var(--surface,#13161e);color:var(--muted,#a8afbd);width:min(360px,100%);}.ds-search:focus-within{outline:2px solid var(--brand,#a78bfa);outline-offset:3px;}.ds-search input{font-family:inherit;width:100%;min-width:0;border:0;outline:none;background:none;height:40px;font-size:12px;color:var(--foreground,#f3f4f6);caret-color:var(--brand,#a78bfa);}.ds-search input::placeholder{color:var(--muted,#a8afbd);}"
+      "css": ".ds-search{font-family:\"DM Sans Variable\",sans-serif;display:flex;align-items:center;gap:9px;min-height:43px;padding:0 13px;border:1px solid var(--border,#272b36);border-radius:8px;background:var(--surface,#13161e);color:var(--muted,#a8afbd);width:min(360px,100%);}.ds-search:focus-within{outline:2px solid var(--brand,#a78bfa);outline-offset:3px;}.ds-search input{font-family:inherit;width:100%;min-width:0;border:0;outline:none;background:none;height:40px;font-size:13px;color:var(--foreground,#f3f4f6);caret-color:var(--brand,#a78bfa);}.ds-search input::placeholder{color:var(--muted,#a8afbd);}"
     },
     {
       "name": "Provider research field",
       "kind": "input",
       "refersTo": "research-input",
-      "description": "Visible research label, canvas-ground input, and factual help.",
+      "description": "Visible Research label with a 48px minimum canvas-ground field, 46px input, and factual help.",
       "html": "<label class=\"ds-label\" for=\"ds-provider\">Which provider are you integrating?</label><div class=\"ds-research-input\"><input id=\"ds-provider\" placeholder=\"Provider name or website, e.g. Notion or notion.so\" maxlength=\"160\" autocomplete=\"off\" aria-describedby=\"ds-provider-help\"/></div><p class=\"ds-help\" id=\"ds-provider-help\">Public names and websites only. Never enter API keys, client secrets, or private account information.</p>",
-      "css": ".ds-label{font-family:\"DM Sans Variable\",sans-serif;display:block;font-size:13px;font-weight:550;color:var(--foreground,#f3f4f6);margin-bottom:10px;}.ds-research-input{display:flex;align-items:center;gap:10px;background:var(--canvas,#0b0d12);border:1px solid var(--border,#272b36);border-radius:7px;padding:0 14px;}.ds-research-input:focus-within{outline:2px solid var(--brand,#a78bfa);outline-offset:3px;}.ds-research-input input{font-family:\"DM Sans Variable\",sans-serif;width:100%;min-width:0;min-height:44px;border:0;outline:none;background:none;color:var(--foreground,#f3f4f6);font-size:13px;caret-color:var(--brand,#a78bfa);}.ds-research-input input::placeholder{color:var(--muted,#a8afbd);}.ds-help{font-family:\"DM Sans Variable\",sans-serif;color:var(--muted,#a8afbd);font-size:11px;line-height:1.8;margin:10px 0 0;}"
+      "css": ".ds-label{font-family:\"DM Sans Variable\",sans-serif;display:block;font-size:13px;font-weight:550;color:var(--foreground,#f3f4f6);margin-bottom:10px;}.ds-research-input{display:flex;min-height:48px;align-items:center;gap:10px;background:var(--canvas,#0b0d12);border:1px solid var(--border,#272b36);border-radius:7px;padding:0 14px;}.ds-research-input:focus-within{outline:2px solid var(--brand,#a78bfa);outline-offset:3px;}.ds-research-input input{font-family:\"DM Sans Variable\",sans-serif;width:100%;min-width:0;min-height:46px;border:0;outline:none;background:none;color:var(--foreground,#f3f4f6);font-size:13px;caret-color:var(--brand,#a78bfa);}.ds-research-input input::placeholder{color:var(--muted,#a8afbd);}.ds-help{font-family:\"DM Sans Variable\",sans-serif;color:var(--muted,#a8afbd);font-size:11px;line-height:1.8;margin:10px 0 0;}"
     },
     {
       "name": "Top navigation",
@@ -760,9 +760,9 @@
       "name": "Selected library view",
       "kind": "nav",
       "refersTo": "library-filter-active",
-      "description": "A library-local filter link, separate from the global top navigation.",
+      "description": "Desktop library-local filter link, separate from global top navigation.",
       "html": "<nav aria-label=\"Library views\"><a class=\"ds-library-filter\" href=\"/guides\" aria-current=\"page\">All guides</a></nav>",
-      "css": ".ds-library-filter{font-family:\"DM Sans Variable\",sans-serif;display:flex;gap:9px;align-items:center;min-height:43px;padding:10px 11px;color:var(--muted,#a8afbd);border-radius:7px;font-size:12px;text-decoration:none;}.ds-library-filter[aria-current=\"page\"]{background:var(--accent,#221b36);color:var(--foreground,#f3f4f6);}.ds-library-filter:hover{background:var(--surface-soft,#191d28);}.ds-library-filter:focus-visible{outline:3px solid var(--brand,#a78bfa);outline-offset:4px;}"
+      "css": ".ds-library-filter{font-family:\"DM Sans Variable\",sans-serif;display:flex;gap:9px;align-items:center;min-height:43px;padding:10px 11px;color:var(--muted,#a8afbd);border-radius:7px;font-size:13px;text-decoration:none;}.ds-library-filter[aria-current=\"page\"]{background:var(--accent,#221b36);color:var(--foreground,#f3f4f6);}.ds-library-filter:hover{background:var(--surface-soft,#191d28);}.ds-library-filter:focus-visible{outline:3px solid var(--brand,#a78bfa);outline-offset:4px;}"
     },
     {
       "name": "Source-confirmed evidence",
@@ -778,7 +778,7 @@
       "refersTo": "checklist-panel",
       "description": "Flat bordered checklist container; progress is filled only from local state.",
       "html": "<section class=\"ds-checklist\" aria-label=\"Setup checklist\"><h2>Setup checklist</h2><p>Progress is saved in this browser, just for you.</p></section>",
-      "css": ".ds-checklist{font-family:\"DM Sans Variable\",sans-serif;border:1px solid var(--border,#272b36);border-radius:9px;padding:18px;background:var(--surface,#13161e);min-width:0;}.ds-checklist h2{font-size:14px;font-weight:600;line-height:1.5;letter-spacing:-.01em;color:var(--foreground,#f3f4f6);margin:0;}.ds-checklist p{border-top:1px solid var(--border,#272b36);padding-top:13px;margin:9px 0 0;font-size:11px;line-height:1.8;color:var(--muted,#a8afbd);}"
+      "css": ".ds-checklist{font-family:\"DM Sans Variable\",sans-serif;border:1px solid var(--border,#272b36);border-radius:9px;padding:24px;background:var(--surface,#13161e);min-width:0;}.ds-checklist h2{font-size:15px;font-weight:600;line-height:1.5;letter-spacing:-.01em;color:var(--foreground,#f3f4f6);margin:0;}.ds-checklist p{border-top:1px solid var(--border,#272b36);padding-top:13px;margin:9px 0 0;font-size:12px;line-height:1.8;color:var(--muted,#a8afbd);}"
     },
     {
       "name": "Research evidence panel",
@@ -786,7 +786,7 @@
       "refersTo": "research-evidence-panel",
       "description": "Actual empty evidence state, without invented source rows.",
       "html": "<section class=\"ds-evidence-panel\"><header><h2>Documentation found</h2></header><div><h3>The evidence will appear here.</h3><p>Start a real research request to see the returned source titles, domains, and links.</p></div></section>",
-      "css": ".ds-evidence-panel{font-family:\"DM Sans Variable\",sans-serif;min-width:0;border:1px solid var(--border,#272b36);border-radius:11px;background:var(--surface,#13161e);overflow:hidden;}.ds-evidence-panel header{padding:17px 19px;border-bottom:1px solid var(--border,#272b36);}.ds-evidence-panel h2{font-size:15px;font-weight:600;letter-spacing:-.015em;margin:0;color:var(--foreground,#f3f4f6);}.ds-evidence-panel>div{min-height:322px;padding:52px 28px;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;}.ds-evidence-panel h3{font-size:15px;font-weight:550;margin:0;color:var(--foreground,#f3f4f6);}.ds-evidence-panel p{font-size:12px;line-height:1.9;max-width:33ch;margin:11px 0 0;color:var(--muted,#a8afbd);}@media(max-width:760px){.ds-evidence-panel>div{min-height:235px;padding:31px 20px;}}"
+      "css": ".ds-evidence-panel{font-family:\"DM Sans Variable\",sans-serif;min-width:0;border:1px solid var(--border,#272b36);border-radius:11px;background:var(--surface,#13161e);overflow:hidden;}.ds-evidence-panel header{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:60px;padding:0 20px;border-bottom:1px solid var(--border,#272b36);}.ds-evidence-panel h2{font-size:15px;font-weight:600;letter-spacing:-.015em;margin:0;color:var(--foreground,#f3f4f6);}.ds-evidence-panel>div{min-height:322px;padding:52px 28px;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;}.ds-evidence-panel h3{font-size:15px;font-weight:550;margin:0;color:var(--foreground,#f3f4f6);}.ds-evidence-panel p{font-size:12px;line-height:1.9;max-width:33ch;margin:11px 0 0;color:var(--muted,#a8afbd);}@media(max-width:760px){.ds-evidence-panel>div{min-height:235px;padding:31px 20px;}}"
     }
   ],
   "narrative": {

@@ -1,5 +1,7 @@
 # Verification
 
+The subsequent desktop UI refinement passed **195 unit tests across 13 files**, **20 browser journeys**, TypeScript, lint, and production build. It added category-presentation behavior checks and inspected twelve desktop dark/light captures. No paid research calls were made for the visual-only backend-preserving pass. See [desktop polish](desktop-polish.md) for measurements and scope; the engineering results below retain their historical counts.
+
 The final engineering pass on 3 November 2026 passed **192 unit tests**, **19 browser journeys**, TypeScript, lint, and a production build. The focused research-quality benchmark passed **18 deterministic cases**, with **8** separate evidence-path integration checks and **46** source-retrieval guard tests included in the unit total. These subsets overlap the total and must not be added to it. See [final validation](final-validation.md) for actual live outcomes, retained failures, corrections, and unexecuted production checks.
 
 Use Node.js 22.12 or newer; the recorded unit run used Node.js 24.22.1.

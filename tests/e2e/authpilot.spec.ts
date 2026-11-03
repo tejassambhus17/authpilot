@@ -71,6 +71,33 @@ test("unmatched providers have a useful empty state", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("library category grouping filters real guides and clears cleanly", async ({
+  page,
+}) => {
+  await page.goto("/guides");
+  const filters = page.getByRole("complementary", { name: "Guide filters" });
+  await filters.getByRole("button", { name: /^Productivity\b/ }).click();
+  await expect(
+    page.getByRole("link", { name: "Google integration guide", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "GitHub integration guide", exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("searchbox", { name: "Search guides" }).fill("GitHub");
+  await expect(
+    page.getByRole("heading", { name: "No guides found" }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Clear filters", exact: true })
+    .click();
+  await expect(
+    page.getByRole("link", { name: "GitHub integration guide", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("searchbox", { name: "Search guides" }),
+  ).toHaveValue("");
+});
+
 for (const provider of ["GitHub", "Slack", "Google"]) {
   test(`Explore opens the actual ${provider} guide without claiming setup verification`, async ({
     page,

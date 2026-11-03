@@ -610,7 +610,7 @@ export function GuideView({ guide }: { guide: Guide }) {
             aria-label="Copy guide link"
             onClick={copyLink}
           >
-            <Share2 size={14} />
+            <Share2 size={16} />
             Share
           </button>
           <SaveGuideButton guideId={guide.id} />
@@ -619,14 +619,14 @@ export function GuideView({ guide }: { guide: Guide }) {
             href={`/api/guides/${guide.id}/export`}
             download
           >
-            <Download size={14} />
+            <Download size={16} />
             Export Markdown
           </a>
           <Link
-            className="button button-primary button-small"
+            className="button button-small"
             href={`/research?q=${encodeURIComponent(guide.provider)}`}
           >
-            <RotateCcw size={14} />
+            <RotateCcw size={16} />
             Research again
           </Link>
         </div>
@@ -766,7 +766,7 @@ export function GuideView({ guide }: { guide: Guide }) {
                       </span>
                     </dd>
                   </div>
-                  <div className={styles.factRow}>
+                  <div className={`${styles.factRow} ${styles.factNarrative}`}>
                     <dt>
                       <Clock3 size={16} />
                       Hands-on effort
@@ -776,7 +776,7 @@ export function GuideView({ guide }: { guide: Guide }) {
                       <ClaimEvidence claim={guide.effort} guide={guide} />
                     </dd>
                   </div>
-                  <div className={styles.factRow}>
+                  <div className={`${styles.factRow} ${styles.factNarrative}`}>
                     <dt>
                       <ShieldCheck size={16} />
                       Approval & wait

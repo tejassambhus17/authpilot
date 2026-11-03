@@ -33,11 +33,23 @@ export function EvidenceInspector({
     .filter((source) => source !== undefined);
   const evidence = claim.evidence || [];
   const hasMatchedPassage = evidence.some((item) => item.match === "matched");
+  const verificationCaveat =
+    claim.verification?.status === "conflicting"
+      ? "The evidence conflicts. This requirement remains unresolved; compare the source statements before acting."
+      : claim.verification?.status === "unsupported"
+        ? "The available evidence does not support this claim. Treat it as unresolved."
+        : claim.status === "unknown"
+          ? "This claim remains unknown. A text match does not resolve its interpretation or applicability."
+          : claim.verification?.status === "passage-matched"
+            ? "Text presence was checked. AI support is an assessment, not independent verification or a tested OAuth setup."
+            : claim.verification
+              ? "Claim support has not been verified. Inspect the original documentation before acting."
+              : "This snapshot retains source summaries, not server-checked quotations.";
 
   return (
     <Dialog.Root>
       <Dialog.Trigger className={styles.trigger}>
-        <CircleHelp size={13} aria-hidden="true" />
+        <CircleHelp size={14} aria-hidden="true" />
         Why this requirement?
       </Dialog.Trigger>
       <Dialog.Portal>
@@ -89,29 +101,23 @@ export function EvidenceInspector({
 
             <section className={styles.section}>
               <h3>Verification status</h3>
-              <p className={styles.verificationTitle}>
-                <FileSearch size={16} aria-hidden="true" />
-                {claim.verification
-                  ? verificationLabels[claim.verification.status]
-                  : "Source summary only"}
-              </p>
-              <p>
-                {claim.verification?.explanation ||
-                  "This snapshot retains citation links and summaries, without a server-checked source passage for this claim."}
-              </p>
-              {claim.verification && (
-                <p className={styles.timestamp}>
-                  Checked{" "}
-                  <time dateTime={claim.verification.checkedAt}>
-                    {retrievalDate(claim.verification.checkedAt)} UTC
-                  </time>
+              <div className={styles.verificationRow}>
+                <p className={styles.verificationTitle}>
+                  <FileSearch size={16} aria-hidden="true" />
+                  {claim.verification
+                    ? verificationLabels[claim.verification.status]
+                    : "Source summary only"}
                 </p>
-              )}
-              <p className={styles.limit}>
-                A matched passage establishes that text was found in a retrieved
-                document. It does not independently prove the interpretation,
-                provider approval, or a successful OAuth setup.
-              </p>
+                {claim.verification && (
+                  <p className={styles.timestamp}>
+                    Checked{" "}
+                    <time dateTime={claim.verification.checkedAt}>
+                      {retrievalDate(claim.verification.checkedAt)} UTC
+                    </time>
+                  </p>
+                )}
+              </div>
+              <p className={styles.compactCaveat}>{verificationCaveat}</p>
             </section>
 
             <section className={styles.section}>
@@ -178,6 +184,19 @@ export function EvidenceInspector({
                   an estimate or unresolved information.
                 </p>
               )}
+            </section>
+
+            <section className={styles.section}>
+              <h3>Assessment details</h3>
+              <p>
+                {claim.verification?.explanation ||
+                  "This snapshot retains citation links and summaries, without a server-checked source passage for this claim."}
+              </p>
+              <p className={styles.limit}>
+                A matched passage establishes that text was found in a retrieved
+                document. It does not independently prove the interpretation,
+                provider approval, or a successful OAuth setup.
+              </p>
             </section>
 
             {sources.length > 0 && (
