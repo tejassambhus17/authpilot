@@ -1,5 +1,7 @@
 # Verification
 
+The guide-overview pass on **4 November 2026** passed **294 unit/integration tests across 20 files**, **29 browser journeys in 33.8 seconds**, TypeScript, lint and production build. The **18-case quality subset** is included in the unit total. Coverage adds readiness/context persistence, blocker recovery, required omissions, snapshot unknowns, compact estimate inspection, and removal of unsupported/generic effort ranges. See [overview validation](overview-validation.md) for the actual environment failures, corrected assertion, visual checks and limits. This pass made no paid research call or OAuth setup attempt; its new hosted behavior is not claimed as tested by these local results.
+
 The public interview-demo update passed **282 unit tests**, **26 browser journeys**, TypeScript, lint and production build. Two additional browser cases verify token-free public research and the retained optional private-deployment gate. The complete reachable history and staged changes passed redacted Gitleaks scans; see [repository audit](repository-audit.md). Historical results below keep their original counts.
 
 The reliability and launch-planning follow-up passed **282 unit tests across 19 files**, the **18-case quality subset**, **24 browser journeys**, TypeScript, lint, and production build. The first unit/browser failures and corrections, paid Figma result, manual plan amendment, UI review, and unexecuted hosted checks are kept in [reliability validation](reliability-validation.md). Counts below remain historical.
@@ -39,6 +41,8 @@ Playwright starts or reuses the local app on `http://127.0.0.1:3100`, avoiding c
 - Missing-API-key feedback and preserved provider input. An unconfigured server exercises its real response; a configured server uses a conditional test-only health/503 fixture so the test never changes or exposes credentials.
 - Test-only HTTP fixtures exercise research rate limits, retry, NDJSON event rendering, successful guide navigation, cancellation, and truncated-stream rejection. These verify the UI consumer and do not claim a paid live research call or a provider OAuth setup succeeded.
 - Backend research and persistence tests cover their own boundaries with injected test transports rather than a production demo flow.
+- Readiness derives from recorded dependencies, applicable tasks, personal state and declared launch context; blockers and required omissions cannot imply successful setup. Provider-owned remaining steps are separate from developer/agent-assisted work. Unknown findings remain snapshot-wide rather than silently disappearing with audience preferences.
+- Legacy effort retains its recorded narrative without generic numeric fallbacks. Unsupported OAuth suppresses executable effort estimates in UI/export; source-free estimate dialogs show assumptions without empty evidence sections and restore keyboard focus on dismissal.
 
 ## Manual paid live verification
 

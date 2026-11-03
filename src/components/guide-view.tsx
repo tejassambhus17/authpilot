@@ -40,6 +40,7 @@ import { EvidenceTag } from "./evidence";
 import { SaveGuideButton } from "./save-guide-button";
 import { EvidenceInspector } from "./evidence-inspector";
 import { LaunchPathFields } from "./launch-path-fields";
+import { GuideReadiness } from "./guide-readiness";
 import {
   formatDuration,
   getPlanningEstimate,
@@ -123,6 +124,7 @@ function GuideSections({ guide, ids }: { guide: Guide; ids: SectionId[] }) {
             className={styles.guideSection}
             key={id}
             id={`section-${id}`}
+            tabIndex={-1}
           >
             <h2>{section.title}</h2>
             <p className={styles.sectionSummary}>{section.summary}</p>
@@ -490,7 +492,11 @@ function NextStepPanel({
         ) : (
           <Zap size={16} />
         )}
-        {next.kind === "blocked" ? "Resolve a blocker" : "Your next step"}
+        {next.kind === "blocked"
+          ? "Resolve a blocker"
+          : step?.actor === "provider"
+            ? "Provider decision pending"
+            : "Your next step"}
       </h2>
       {!ready ? (
         <p>Loading your checklist progress…</p>
@@ -705,6 +711,7 @@ export function GuideView({ guide }: { guide: Guide }) {
   );
   const [blockerNotes, setBlockerNotes] = useState<BlockerNotes>({});
   const tabsRef = useRef<HTMLDivElement>(null);
+  const launchPathRef = useRef<HTMLDetailsElement>(null);
   const storageKey = `authpilot:checklist:${guide.id}:v1`;
   const pathKey = `authpilot:launch-path:${guide.id}:v1`;
   const blockersKey = `authpilot:blockers:${guide.id}:v1`;
@@ -823,6 +830,9 @@ export function GuideView({ guide }: { guide: Guide }) {
   function selectTab(value: Tab, scroll = false) {
     setTab(value);
     if (scroll) tabsRef.current?.scrollIntoView({ block: "start" });
+    requestAnimationFrame(() =>
+      document.getElementById(`tab-${value}`)?.focus({ preventScroll: true }),
+    );
   }
 
   function readSection(sectionId: SectionId) {
@@ -835,11 +845,11 @@ export function GuideView({ guide }: { guide: Guide }) {
             ? "issues"
             : "steps";
     selectTab(target);
-    requestAnimationFrame(() =>
-      document
-        .getElementById(`section-${sectionId}`)
-        ?.scrollIntoView({ block: "start" }),
-    );
+    requestAnimationFrame(() => {
+      const section = document.getElementById(`section-${sectionId}`);
+      section?.scrollIntoView({ block: "start" });
+      section?.focus({ preventScroll: true });
+    });
   }
 
   async function copyLink() {
@@ -1030,6 +1040,22 @@ export function GuideView({ guide }: { guide: Guide }) {
                 </div>
               </div>
             )}
+            <GuideReadiness
+              guide={guide}
+              progress={progress}
+              launchPath={launchPath}
+              blockers={blockerNotes}
+              ready={storageReady}
+              onEditPath={() => {
+                if (!launchPathRef.current) return;
+                launchPathRef.current.open = true;
+                launchPathRef.current.scrollIntoView({ block: "start" });
+                launchPathRef.current.querySelector("summary")?.focus();
+              }}
+              onSteps={() => selectTab("steps", true)}
+              onReview={() => selectTab("approval", true)}
+              onRead={readSection}
+            />
             <div className={styles.overviewGrid}>
               <section
                 className={styles.overviewContent}
@@ -1074,33 +1100,54 @@ export function GuideView({ guide }: { guide: Guide }) {
                       Hands-on effort
                     </dt>
                     <dd>
-                      <dl className={styles.effortBreakdown}>
-                        <div>
-                          <dt>Registration</dt>
-                          <dd>{formatDuration(planning.registration)}</dd>
-                        </div>
-                        <div>
-                          <dt>Implementation & tests</dt>
-                          <dd>{formatDuration(planning.implementation)}</dd>
-                        </div>
-                      </dl>
-                      <p className={styles.planningLabel}>
-                        Planning estimate ·{" "}
-                        {planning.baseline
-                          ? "generic baseline"
-                          : "AI assessment"}{" "}
-                        · approval waiting excluded
-                      </p>
-                      <details className={styles.planningAssumptions}>
-                        <summary>Estimate assumptions</summary>
-                        <ul>
-                          {planning.assumptions.map((item, index) => (
-                            <li key={index}>{item}</li>
-                          ))}
-                        </ul>
-                      </details>
-                      <p>{guide.effort.text}</p>
-                      <ClaimEvidence claim={guide.effort} guide={guide} />
+                      {!planning.baseline && (
+                        <dl className={styles.effortBreakdown}>
+                          <div>
+                            <dt>Registration</dt>
+                            <dd>{formatDuration(planning.registration)}</dd>
+                          </div>
+                          <div>
+                            <dt>Implementation & tests</dt>
+                            <dd>{formatDuration(planning.implementation)}</dd>
+                          </div>
+                        </dl>
+                      )}
+                      {planning.baseline && (
+                        <p>
+                          {guide.oauthSupport === "supported"
+                            ? guide.effort.text
+                            : "Confirm OAuth support before estimating executable setup work."}
+                        </p>
+                      )}
+                      {guide.oauthSupport === "supported" && (
+                        <>
+                          <p className={styles.planningLabel}>
+                            Planning estimate ·{" "}
+                            {planning.baseline
+                              ? "recorded narrative"
+                              : "AI assessment"}{" "}
+                            · unmeasured · approval waiting excluded
+                          </p>
+                          {planning.baseline ? (
+                            <p className={styles.navigationNote}>
+                              Separate registration and implementation ranges
+                              were not recorded. No generic duration has been
+                              substituted.
+                            </p>
+                          ) : (
+                            <details className={styles.planningAssumptions}>
+                              <summary>Estimate assumptions</summary>
+                              <ul>
+                                {planning.assumptions.map((item, index) => (
+                                  <li key={index}>{item}</li>
+                                ))}
+                              </ul>
+                              <p>Original research note: {guide.effort.text}</p>
+                            </details>
+                          )}
+                          <ClaimEvidence claim={guide.effort} guide={guide} />
+                        </>
+                      )}
                     </dd>
                   </div>
                   <div className={`${styles.factRow} ${styles.factNarrative}`}>
@@ -1193,6 +1240,7 @@ export function GuideView({ guide }: { guide: Guide }) {
             </div>
 
             <details
+              ref={launchPathRef}
               className={`${styles.disclosure} ${styles.launchPathDisclosure}`}
             >
               <summary>

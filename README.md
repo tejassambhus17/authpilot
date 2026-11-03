@@ -38,6 +38,7 @@ _Actual application capture from validation. Provider facts belong to the record
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | **Provider library**      | Search, filter and sort guides; save useful results in your browser.                                                     |
 | **Launch planning**       | Record audience, API/scope interests, account permissions and optional listing needs.                                    |
+| **Readiness summary**    | See applicable next actions, personal blockers, remaining provider steps and snapshot-wide unknowns in the guide overview. |
 | **Live research**         | Retrieve current documentation through real web search, with observed-event progress.                                    |
 | **Complete guides**       | Navigate prerequisites, registration, scopes, redirects, credentials, testing, review, distribution and troubleshooting. |
 | **Actionable checklists** | Track Not started, In progress, Blocked, Completed or Not applicable; retain blocker reasons and responsible roles.      |
@@ -58,6 +59,8 @@ The inspector exposes the **exact claim**, **conditions**, **supporting passage*
 | **Agent-tested**     | Rejected by this build because it does not execute OAuth setup.                                                                                        |
 
 A text match establishes provenance; an AI assessment can still be wrong. Domain association is a heuristic, not independent publisher certification. Curated guides and dated manual amendments disclose their own audit method. Retained summaries are never presented as checked quotations.
+
+Source-free planning estimates open a compact **About this estimate** panel with assumptions and exclusions. Requirement claims retain the full evidence inspector. Older guides preserve their original narrative effort estimates without substituting generic numeric ranges; newer structured estimates keep registration and implementation separate. Unsupported or unclear OAuth receives no executable effort estimate.
 
 ## Quick start
 
@@ -150,6 +153,7 @@ The application budget is **270 seconds from handler entry**, including database
 - **A focused catalog with real discovery.** Three curated providers demonstrate distinct integration challenges. A fresh checkout contains those three; the hosted library also retains genuine generated results.
 - **Audience before approval assumptions.** Internal use, public distribution, administrator consent and optional listing remain separate. Choosing an audience does not submit an app.
 - **Blocked means blocked.** Unmet prerequisites prevent immediate recommendations. Independent work can continue. Omitting a required prerequisite does not satisfy it.
+- **Readiness is a reading aid.** The overview combines this browser's checklist and declared preferences with recorded evidence. Snapshot-wide unknowns remain visible across launch paths; completed tasks do not certify setup or approval.
 - **Preserve research assumptions.** Original request context travels with the public snapshot. Local preference changes do not research missing requirements; a different launch path may need another run.
 - **Share content, keep progress personal.** Bookmarks, checklist states and blocker notes belong to each browser and stay out of exports.
 - **Correct transparently.** Audited Figma snapshots have dated reading amendments, preserving the original database documents. Manual corrections and AI interpretations remain distinguishable.
@@ -161,9 +165,9 @@ The application budget is **270 seconds from handler entry**, including database
 
 | Check                                | Actual result                                                                               |
 | ------------------------------------ | ------------------------------------------------------------------------------------------- |
-| Unit / integration tests             | **282 passed across 19 files**                                                              |
+| Unit / integration tests             | **294 passed across 20 files**                                                              |
 | Research-quality benchmark           | **18 passed**, included in the unit total                                                   |
-| Browser journeys                     | **26 passed locally**, including public/private research access                             |
+| Browser journeys                     | **29 passed locally in 33.8 seconds**, including readiness, blockers, estimate inspection and public/private access |
 | TypeScript, ESLint, production build | Passed                                                                                      |
 | GitHub → Vercel                      | A real push automatically built commit `602c5c5` and reached Ready                          |
 | Hosted persistence                   | Generated guides reopened, exported and survived redeploy                                   |
@@ -173,6 +177,8 @@ The application budget is **270 seconds from handler entry**, including database
 The first hosted Figma search hit its output cap and saved nothing. The report-length/headroom correction was tested, deployed and followed by successful live calls. A separate review caught publication being placed before preparation; the dated amendment and regression tests retain that failure. These records demonstrate corrections, not infallible future output.
 
 The benchmark covers approval versus optional listing, administrator consent versus provider review, absent timelines, unsupported OAuth and contradictory evidence. Synthetic passages and fixture verdicts test deterministic guards; they do **not** measure live-model semantic accuracy. No OAuth client was registered, token-exchanged or approved. A real unauthenticated GitHub registration preflight stopped at sign-in.
+
+The latest overview pass made no paid research call and did not repeat OAuth setup attempts. Its local verification and corrected test/build failures are recorded separately from the earlier hosted research outcomes in [overview validation](docs/overview-validation.md).
 
 <details>
 <summary><strong>Run the verification suite</strong></summary>
@@ -198,6 +204,7 @@ npm run check:deployment -- --vercel
 | Report                                                   | Coverage                                                                   |
 | -------------------------------------------------------- | -------------------------------------------------------------------------- |
 | [Production validation](docs/production-validation.md)   | Hosted checks, actual failures/corrections, runtime and operational limits |
+| [Overview validation](docs/overview-validation.md)       | Readiness, preserved effort scope, compact estimates, keyboard focus and current local checks |
 | [Reliability validation](docs/reliability-validation.md) | Retries, launch planning, blockers and semantic plan corrections           |
 | [Research-quality benchmark](docs/research-quality.md)   | Adversarial/control cases and fixture-evaluation limits                    |
 | [Provider validation](docs/provider-validation.md)       | Official-source checks for curated guidance                                |

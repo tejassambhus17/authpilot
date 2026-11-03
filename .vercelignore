@@ -7,6 +7,7 @@ data/
 .impeccable/
 design-qa.md
 tmp/
+output/
 test-results/
 playwright-report/
 .next/

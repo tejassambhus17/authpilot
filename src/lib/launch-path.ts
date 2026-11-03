@@ -45,13 +45,12 @@ export function getPlanningEstimate(guide: Guide) {
     };
   if (guide.planning) return { ...guide.planning, baseline: false };
   return {
-    registration: { minMinutes: 15, maxMinutes: 45 },
-    implementation: { minMinutes: 120, maxMinutes: 480 },
+    registration: null,
+    implementation: null,
     assumptions: [
-      "Generic planning baseline for one OAuth client, not a provider-measured duration.",
-      "An existing web backend, a developer familiar with OAuth, required account permissions, and a working local redirect endpoint.",
-      "Registration covers console setup; implementation covers the authorization callback, secure token storage, and developer-run happy-path/error tests.",
-      "Excludes learning OAuth, new infrastructure, security assessment, administrator decisions, and provider approval waiting.",
+      "This snapshot records a narrative estimate, without separate registration and implementation ranges. No numeric fallback is substituted.",
+      "Preserve the conditions and exclusions in the recorded estimate; it is an unmeasured planning judgment, not a provider-measured duration.",
+      "Provider approval waiting is separate. Account permissions, existing implementation, requested scopes, and review feedback can change the work.",
     ],
     baseline: true,
   };
@@ -60,7 +59,7 @@ export function getPlanningEstimate(guide: Guide) {
 export function formatDuration(
   range: { minMinutes: number; maxMinutes: number } | null,
 ) {
-  if (!range) return "Unknown — confirm the integration path first";
+  if (!range) return "Unknown — no reliable range recorded";
   if (range.minMinutes >= 60 && range.maxMinutes >= 60)
     return `${Number((range.minMinutes / 60).toFixed(1))}–${Number((range.maxMinutes / 60).toFixed(1))} hours`;
   return `${range.minMinutes}–${range.maxMinutes} minutes`;

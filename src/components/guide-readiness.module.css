@@ -1,0 +1,129 @@
+.summary {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 22px 24px;
+  margin-bottom: 28px;
+}
+.heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+.summary .heading h2 {
+  font-size: 17px;
+  line-height: 1.4;
+}
+.verdict {
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 550;
+  margin-top: 8px;
+}
+.description,
+.boundary,
+.details p {
+  font-size: 12px;
+  line-height: 1.75;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.description {
+  margin-top: 8px;
+}
+.context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 32px;
+  margin-top: 18px;
+}
+.context div {
+  min-width: 0;
+  max-width: 42ch;
+}
+.context dt {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.context dd {
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 24px;
+  border-top: 1px solid var(--border);
+  margin-top: 18px;
+  padding-top: 8px;
+}
+.summary button:not(:global(.button)),
+.details summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: left;
+  color: var(--brand);
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  min-height: 36px;
+  padding: 4px 0;
+}
+.summary button:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.summary .warning {
+  color: var(--amber);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.boundary {
+  margin-top: 10px;
+}
+.details {
+  margin-top: 8px;
+}
+.details summary {
+  display: list-item;
+}
+.details summary svg {
+  display: inline;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+.details ul {
+  margin: 8px 0 12px;
+  padding-left: 20px;
+}
+.details li {
+  padding: 8px 0;
+  max-width: 90ch;
+}
+.details strong {
+  font-size: 13px;
+  font-weight: 550;
+}
+@media (max-width: 680px) {
+  .summary {
+    padding: 20px;
+  }
+  .heading {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .context {
+    gap: 12px 24px;
+  }
+  .actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

@@ -60,9 +60,22 @@ describe("portable guide export", () => {
     const guide = structuredClone(seedGuides[0]);
     delete guide.planning;
     guide.oauthSupport = "unsupported";
+    guide.effort.text = "777 minutes to register an unsupported client";
     expect(guideToMarkdown(guide)).toContain(
-      "Unknown — confirm the integration path first",
+      "No executable range is estimated while OAuth support is unresolved",
     );
     expect(guideToMarkdown(guide)).not.toContain("15–45 minutes");
+    expect(guideToMarkdown(guide)).not.toContain("777 minutes");
+  });
+
+  it("keeps a legacy narrative estimate without adding a competing baseline", () => {
+    const guide = { ...seedGuides[0], planning: undefined };
+    const output = guideToMarkdown(guide);
+    expect(output).toContain(guide.effort.text);
+    expect(output).toContain(
+      "Separate registration and implementation ranges were not recorded",
+    );
+    expect(output).not.toContain("15–45 minutes");
+    expect(output).not.toContain("2–8 hours");
   });
 });

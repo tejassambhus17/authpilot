@@ -578,7 +578,7 @@ test("evidence inspection exposes legacy limits and restores keyboard focus", as
   // the old summaries into newly verified quotations.
   const trigger = page
     .getByRole("button", { name: "Why this requirement?", exact: true })
-    .nth(1);
+    .first();
   await trigger.focus();
   await page.keyboard.press("Enter");
   const inspector = page.getByRole("dialog", { name: "Why this requirement?" });

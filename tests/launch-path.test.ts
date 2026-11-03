@@ -143,11 +143,12 @@ describe("personal launch paths", () => {
 });
 
 describe("honest hands-on planning", () => {
-  it("labels legacy fallback as a generic baseline with concrete exclusions", () => {
+  it("preserves legacy narrative estimates without inventing numeric ranges", () => {
     const guide = { ...seedGuides[0], planning: undefined };
     const plan = getPlanningEstimate(guide);
     expect(plan.baseline).toBe(true);
-    expect(plan.registration).toEqual({ minMinutes: 15, maxMinutes: 45 });
+    expect(plan.registration).toBeNull();
+    expect(plan.implementation).toBeNull();
     expect(plan.assumptions.join(" ")).toMatch(/not a provider-measured/);
     expect(plan.assumptions.join(" ")).toMatch(/approval waiting/);
   });

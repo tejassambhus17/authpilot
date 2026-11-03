@@ -57,14 +57,26 @@ export function guideToMarkdown(guide: Guide): string {
     "",
     "## Effort and approval",
     "",
-    `- Hands-on registration estimate: ${formatDuration(planning.registration)}`,
-    `- Hands-on implementation estimate: ${formatDuration(planning.implementation)}`,
-    `- Basis: ${planning.baseline ? "Generic planning baseline, not provider-measured" : "AI planning judgment, not provider-measured"}. These estimates exclude approval waiting.`,
+    ...(planning.baseline
+      ? [
+          guide.oauthSupport === "supported"
+            ? "- Separate registration and implementation ranges were not recorded. No generic numeric fallback is substituted; consult the recorded estimate below."
+            : "- No executable range is estimated while OAuth support is unresolved.",
+        ]
+      : [
+          `- Hands-on registration estimate: ${formatDuration(planning.registration)}`,
+          `- Hands-on implementation estimate: ${formatDuration(planning.implementation)}`,
+        ]),
+    `- Basis: ${planning.baseline ? "Recorded narrative planning judgment, not provider-measured" : "AI planning judgment, not provider-measured"}. These estimates exclude approval waiting.`,
     ...planning.assumptions.map(
       (assumption) => `  - Assumption: ${assumption}`,
     ),
     "",
-    claimLine(guide.effort, guide),
+    ...(guide.oauthSupport === "supported"
+      ? [claimLine(guide.effort, guide)]
+      : [
+          "OAuth support must be established before estimating executable setup work. Old effort estimates are not actionable.",
+        ]),
     claimLine(guide.approval, guide),
     "",
     ...guide.sections.flatMap((section) => [

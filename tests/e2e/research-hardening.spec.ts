@@ -171,7 +171,10 @@ test("specific blocker notes survive reload and stay out of Markdown", async ({
   const exported = await request.get("/api/guides/github/export");
   const text = await exported.text();
   expect(text).toContain("Recovery owner:");
-  expect(text).toContain("Hands-on registration estimate:");
+  expect(text).toContain(
+    "Separate registration and implementation ranges were not recorded",
+  );
+  expect(text).toContain(guide.effort.text);
   expect(text).not.toContain("Awaiting the organization owner decision");
 });
 
