@@ -1,5 +1,7 @@
 # Provider evidence review
 
+The final engineering pass adds per-claim passage checks and a separate support assessment for **new generated guides**; the curated source audits below retain their original scope and retrieval dates. The evidence inspector labels legacy summaries as summaries, not quotations. See [final validation](final-validation.md) for actual unfamiliar-provider runs, retrieved-page limits, corrections, and unexecuted OAuth setup actions. A model support assessment and an exact-text match do not independently certify a provider policy.
+
 Reviewed on **3 November 2026** using live retrieval of official provider documentation. This is a documentation review, not a completed OAuth registration, token exchange, or approval. No provider credentials, paid accounts, or production permissions were used.
 
 The attached assignment asks for a few varied providers and a real generation flow, not all 100 library entries. GitHub demonstrates user authorization with organization policy; Slack demonstrates installation and commercial distribution review; Google demonstrates scope-dependent verification. They expose meaningfully different launch blockers.

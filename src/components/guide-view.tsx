@@ -34,6 +34,12 @@ import {
 import { ProviderIcon } from "./brand";
 import { EvidenceTag } from "./evidence";
 import { SaveGuideButton } from "./save-guide-button";
+import { EvidenceInspector } from "./evidence-inspector";
+import {
+  getGuideNextStep,
+  getStepDependencies,
+  getStepDocumentation,
+} from "@/lib/guide-navigation";
 import styles from "./guide-view.module.css";
 
 const tabs = [
@@ -88,6 +94,7 @@ function ClaimEvidence({ claim, guide }: { claim: Claim; guide: Guide }) {
           </a>
         ) : null;
       })}
+      <EvidenceInspector claim={claim} guide={guide} />
     </div>
   );
 }
@@ -170,6 +177,15 @@ function Checklist({
       <ol className={styles.checklistItems} aria-label="Checklist steps">
         {guide.checklist.map((step) => {
           const status = progress[step.id] || "not-started";
+          const { dependencies, inferredOrder } = getStepDependencies(
+            guide.checklist,
+            step,
+            progress,
+          );
+          const unmet = dependencies.filter(
+            (item) => item.status !== "completed",
+          );
+          const documentation = getStepDocumentation(guide, step);
           return (
             <li className={styles.checklistItem} key={step.id}>
               <label
@@ -191,6 +207,29 @@ function Checklist({
               </label>
               {!compact && (
                 <p className={styles.stepDescription}>{step.description}</p>
+              )}
+              {!compact && status === "blocked" && (
+                <div className={styles.stepRecovery}>
+                  <strong>Blocked — resolve before continuing</strong>
+                  <p>
+                    {step.recovery ||
+                      "You marked this task blocked; its specific reason was not recorded. Review the guidance and documentation, resolve the prerequisite, then update the status when you can continue."}
+                  </p>
+                </div>
+              )}
+              {!compact && unmet.length > 0 && (
+                <p className={styles.dependencyNote}>
+                  Depends on:{" "}
+                  {unmet
+                    .map(
+                      (item) =>
+                        `${item.title} (${item.status === "missing" ? "not recorded" : statuses.find((value) => value.value === item.status)?.label.toLowerCase()})`,
+                    )
+                    .join("; ")}
+                  .
+                  {inferredOrder &&
+                    " This older guide uses checklist order as a conservative prerequisite assumption."}
+                </p>
               )}
               <div className={styles.stepControls}>
                 <select
@@ -231,6 +270,19 @@ function Checklist({
                     <ArrowUpRight size={12} />
                   </button>
                 )}
+                {!compact && documentation.sources[0] && (
+                  <a
+                    className={styles.inlineAction}
+                    href={documentation.sources[0].url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {documentation.specific
+                      ? "Step documentation"
+                      : "Related section documentation"}
+                    <ArrowUpRight size={12} />
+                  </a>
+                )}
               </div>
             </li>
           );
@@ -240,6 +292,195 @@ function Checklist({
         <p className={styles.personalNote}>
           Progress is saved in this browser, just for you.
         </p>
+      )}
+    </section>
+  );
+}
+
+function NextStepPanel({
+  guide,
+  progress,
+  ready,
+  onRead,
+}: {
+  guide: Guide;
+  progress: Record<string, ChecklistStatus>;
+  ready: boolean;
+  onRead: (section: SectionId) => void;
+}) {
+  const next = getGuideNextStep(guide, progress);
+  const step = next.step;
+  const docs = step ? getStepDocumentation(guide, step) : null;
+  const otherBlockers = next.blockedSteps.filter(
+    (blocked) =>
+      blocked.id !== (next.kind === "blocked" ? step?.id : undefined),
+  );
+  return (
+    <section
+      className={`${styles.nextStepPanel} ${next.kind === "blocked" ? styles.blockedPanel : ""}`}
+      aria-live="polite"
+    >
+      <h2>
+        {next.kind === "blocked" ? (
+          <CircleAlert size={16} />
+        ) : (
+          <Zap size={16} />
+        )}
+        {next.kind === "blocked" ? "Resolve a blocker" : "Your next step"}
+      </h2>
+      {!ready ? (
+        <p>Loading your checklist progress…</p>
+      ) : (
+        <>
+          <h3>
+            {next.supportRestricted
+              ? "Confirm OAuth support first"
+              : step?.title ||
+                (next.supportUnestablished
+                  ? "Review your OAuth support findings"
+                  : "Review your completed integration")}
+          </h3>
+          <p>
+            {next.supportRestricted
+              ? `OAuth support is ${guide.oauthSupport === "unsupported" ? "not established" : "unclear"} for this provider. “${step!.title}” is not recommended as an executable next step.`
+              : next.kind === "blocked"
+                ? progress[step!.id] === "blocked"
+                  ? "You marked this task blocked. Resolve the blocker before treating this task as actionable."
+                  : "This task has unmet prerequisites. Complete or resolve the dependencies below before continuing."
+                : step?.description ||
+                  (next.supportUnestablished
+                    ? "Checklist completion does not establish OAuth support. Review official support for your use case before implementing an integration."
+                    : "Your checklist is complete. Review your real integration and the current provider requirements before launch.")}
+          </p>
+          {next.kind === "blocked" && step && (
+            <div className={styles.recoveryInstructions}>
+              <h4>Recovery</h4>
+              <p>
+                {next.supportRestricted
+                  ? "Verify in official documentation or with the provider that OAuth is available for your intended integration. Do not register an app, configure credentials or redirects, choose scopes, or execute a flow until support is established. If OAuth is unavailable, investigate a supported alternative. Your personal checklist status has not been changed."
+                  : step.recovery ||
+                    "The specific blocker reason was not recorded in this guide. Review this step’s guidance, identify the missing prerequisite or permission, and resolve it with the appropriate account owner or provider. Update the checklist when you can continue."}
+              </p>
+            </div>
+          )}
+          {step && next.dependencies.length > 0 && (
+            <details
+              className={styles.dependencyDetails}
+              open={
+                next.kind === "blocked" && next.unmetDependencies.length > 0
+              }
+            >
+              <summary>
+                {next.unmetDependencies.length
+                  ? "Unmet dependencies"
+                  : "Dependencies completed"}
+              </summary>
+              <ul>
+                {next.dependencies.map((dependency) => (
+                  <li key={dependency.id}>
+                    <span>{dependency.title}</span>
+                    <strong>
+                      {dependency.status === "missing"
+                        ? "Not recorded"
+                        : statuses.find(
+                            (status) => status.value === dependency.status,
+                          )?.label}
+                    </strong>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+          {step && next.inferredOrder && (
+            <p className={styles.navigationNote}>
+              This older guide has no explicit dependency map. Checklist order
+              is used conservatively; later tasks are not assumed independent.
+            </p>
+          )}
+          {next.supportUnestablished && !next.supportRestricted && step && (
+            <p className={styles.navigationNote}>
+              OAuth support is not established. Preparation and investigation
+              can proceed; OAuth registration and execution tasks remain
+              restricted.
+            </p>
+          )}
+          {step?.actor === "provider" && next.kind === "actionable" && (
+            <p className={styles.navigationNote}>
+              This step requires a provider decision. Review its submission or
+              follow-up instructions; AuthPilot cannot approve it.
+            </p>
+          )}
+          {docs?.sources[0] ? (
+            <a
+              className="button button-primary"
+              href={docs.sources[0].url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {docs.specific
+                ? "Open step documentation"
+                : "Open related documentation"}
+              <ArrowUpRight size={14} />
+            </a>
+          ) : (
+            <a
+              className="button button-primary"
+              href={guide.website}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open provider website
+              <ArrowUpRight size={14} />
+            </a>
+          )}
+          {step && !docs?.specific && (
+            <p className={styles.navigationNote}>
+              No step-specific source was recorded.{" "}
+              {docs?.sources.length
+                ? "This link supports the related guide section."
+                : "The provider website is a starting point, not evidence for this step."}
+            </p>
+          )}
+          {step && (
+            <button
+              className={styles.inlineAction}
+              onClick={() => onRead(step.sectionId)}
+            >
+              {next.kind === "blocked"
+                ? "Read recovery guidance"
+                : "Read this step’s guidance"}
+              <ArrowRight size={12} />
+            </button>
+          )}
+          {otherBlockers.length > 0 && (
+            <details className={styles.dependencyDetails}>
+              <summary>
+                {otherBlockers.length}{" "}
+                {otherBlockers.length === 1
+                  ? "other task is"
+                  : "other tasks are"}{" "}
+                blocked
+              </summary>
+              <ul>
+                {otherBlockers.map((blocked) => (
+                  <li key={blocked.id}>
+                    <button
+                      className={styles.inlineAction}
+                      onClick={() => onRead(blocked.sectionId)}
+                    >
+                      {blocked.title}
+                      <ArrowRight size={12} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <p className={styles.navigationNote}>
+                These blockers remain unresolved even if an independent task can
+                proceed.
+              </p>
+            </details>
+          )}
+        </>
       )}
     </section>
   );
@@ -345,16 +586,6 @@ export function GuideView({ guide }: { guide: Guide }) {
   const blocked = guide.checklist.filter(
     (step) => progress[step.id] === "blocked",
   ).length;
-  const nextStep = guide.checklist.find(
-    (step) => progress[step.id] !== "completed",
-  );
-  const nextSection = guide.sections.find(
-    (section) => section.id === nextStep?.sectionId,
-  );
-  const nextSource = nextSection?.claims
-    .flatMap((claim) => claim.sourceIds)
-    .map((id) => guide.sources.find((source) => source.id === id))
-    .find(Boolean);
   const prerequisites = guide.sections.find(
     (section) => section.id === "prerequisites",
   );
@@ -597,37 +828,12 @@ export function GuideView({ guide }: { guide: Guide }) {
                 </button>
               </div>
               <aside className={styles.nextRail} aria-label="Your next step">
-                <section className={styles.nextStepPanel}>
-                  <h2>
-                    <Zap size={16} />
-                    Your next step
-                  </h2>
-                  <h3>
-                    {nextStep?.title || "Review your completed integration"}
-                  </h3>
-                  <p>
-                    {nextStep?.description ||
-                      "Your checklist is complete. Review your real integration and the current provider requirements before launch."}
-                  </p>
-                  <a
-                    className="button button-primary"
-                    href={nextSource?.url || guide.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Open {guide.provider} docs
-                    <ArrowUpRight size={14} />
-                  </a>
-                  {nextStep && (
-                    <button
-                      className={styles.inlineAction}
-                      onClick={() => readSection(nextStep.sectionId)}
-                    >
-                      Read this step’s guidance
-                      <ArrowRight size={12} />
-                    </button>
-                  )}
-                </section>
+                <NextStepPanel
+                  guide={guide}
+                  progress={progress}
+                  ready={storageReady}
+                  onRead={readSection}
+                />
                 <section className={styles.reviewPanel}>
                   <h2>
                     <ShieldCheck size={16} />
@@ -810,7 +1016,7 @@ export function GuideView({ guide }: { guide: Guide }) {
             </div>
             <p className={styles.sourcesIntro}>
               {guide.origin === "curated"
-                ? "These official pages were checked while preparing this guide. Excerpts are short supporting quotations; the linked documentation is authoritative."
+                ? "These official pages were checked while preparing this guide. Retained source summaries are not server-checked quotations; inspect each requirement for any matched source passage."
                 : "These URLs were returned by the live web-search tool and matched against the guide’s citations. Evidence summaries are model interpretations, not independently verified quotations."}{" "}
               Retrieval dates describe documentation research, not a completed
               OAuth setup.
@@ -853,6 +1059,12 @@ export function GuideView({ guide }: { guide: Guide }) {
                     >
                       {source.url}
                     </a>
+                    <p className={styles.sourceSummaryLabel}>
+                      {guide.origin === "researched"
+                        ? "AI evidence summary"
+                        : "Guide summary"}{" "}
+                      · not a quotation
+                    </p>
                     <p>{source.excerpt}</p>
                     <div className={styles.sourceMeta}>
                       <span>{source.publisher}</span>

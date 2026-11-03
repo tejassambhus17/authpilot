@@ -500,3 +500,130 @@ test("guide tabs support keyboard navigation", async ({ page }) => {
     page.getByRole("heading", { name: "Trace every requirement." }),
   ).toBeVisible();
 });
+
+test("evidence inspection exposes legacy limits and restores keyboard focus", async ({
+  page,
+}) => {
+  await page.goto("/guides/github");
+  // The retained curated snapshot has source summaries, not checked per-claim
+  // passages. The inspector must preserve that distinction instead of turning
+  // the old summaries into newly verified quotations.
+  const trigger = page
+    .getByRole("button", { name: "Why this requirement?", exact: true })
+    .nth(1);
+  await trigger.focus();
+  await page.keyboard.press("Enter");
+  const inspector = page.getByRole("dialog", { name: "Why this requirement?" });
+  await expect(inspector).toBeVisible();
+  await expect(
+    inspector.getByRole("heading", { name: "Exact claim", exact: true }),
+  ).toBeVisible();
+  await expect(
+    inspector.getByRole("heading", {
+      name: "Applicable conditions",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    inspector.getByRole("heading", {
+      name: "Verification status",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    inspector.getByText(
+      "No checked source passage was captured for this snapshot.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(
+    inspector.getByText(/Guide summary.*not a quotation/).first(),
+  ).toBeVisible();
+  await expect(inspector.locator("blockquote")).toHaveCount(0);
+  await expect(
+    inspector.locator('a[href^="https://docs.github.com/"]').first(),
+  ).toBeVisible();
+  await expect(inspector.locator("time").first()).toHaveAttribute(
+    "datetime",
+    /2026-11-03T/,
+  );
+  await page.keyboard.press("Escape");
+  await expect(inspector).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
+
+test("a blocked prerequisite is resolved before another task becomes actionable", async ({
+  page,
+}) => {
+  await page.goto("/guides/github");
+  const firstStatus = page
+    .getByRole("combobox", { name: /^Status for / })
+    .first();
+  const firstStepTitle = (await firstStatus.getAttribute(
+    "aria-label",
+  ))!.replace(/^Status for /, "");
+  await firstStatus.selectOption("blocked");
+  const nextStep = page.getByRole("complementary", { name: "Your next step" });
+  await expect(
+    nextStep.getByRole("heading", { name: "Resolve a blocker", exact: true }),
+  ).toBeVisible();
+  await expect(
+    nextStep.getByRole("heading", { name: firstStepTitle, exact: true }),
+  ).toBeVisible();
+  await expect(
+    nextStep.getByRole("heading", { name: "Your next step", exact: true }),
+  ).toHaveCount(0);
+  await expect(nextStep).toContainText(/blocked/i);
+  await page.reload();
+  await expect(firstStatus).toHaveValue("blocked");
+  await expect(
+    nextStep.getByRole("heading", { name: "Resolve a blocker", exact: true }),
+  ).toBeVisible();
+  await expect(
+    nextStep.getByRole("heading", { name: "Recovery", exact: true }),
+  ).toBeVisible();
+  await expect(nextStep).toContainText("No step-specific source was recorded.");
+  await expect(
+    nextStep.getByRole("link", { name: "Open related documentation" }),
+  ).toHaveAttribute("href", /^https:\/\/docs\.github\.com\//);
+  await nextStep
+    .getByRole("button", { name: "Read recovery guidance", exact: true })
+    .click();
+  await expect(
+    page.getByRole("tab", { name: "Setup steps", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("#section-prerequisites")).toBeVisible();
+  await firstStatus.selectOption("in-progress");
+  await page.getByRole("tab", { name: "Overview", exact: true }).click();
+  await expect(
+    nextStep.getByRole("heading", { name: "Your next step", exact: true }),
+  ).toBeVisible();
+  await expect(
+    nextStep.getByRole("heading", { name: firstStepTitle, exact: true }),
+  ).toBeVisible();
+});
+
+test("the evidence inspector fits a mobile viewport and has a usable close control", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/guides/github");
+  await page
+    .getByRole("button", { name: "Why this requirement?", exact: true })
+    .first()
+    .click();
+  const inspector = page.getByRole("dialog", { name: "Why this requirement?" });
+  await expect(inspector).toBeVisible();
+  const box = await inspector.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+  const close = inspector.getByRole("button", {
+    name: "Close evidence inspector",
+  });
+  const closeBox = await close.boundingBox();
+  expect(closeBox!.width).toBeGreaterThanOrEqual(44);
+  expect(closeBox!.height).toBeGreaterThanOrEqual(44);
+  await close.click();
+  await expect(inspector).toHaveCount(0);
+});

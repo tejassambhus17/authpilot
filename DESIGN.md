@@ -181,6 +181,10 @@ AuthPilot is a focused developer workspace built from deep charcoal, restrained 
 
 The interface balances a compact operating view for finding providers and following research with an open reading view for source-linked requirements. Violet identifies actions and selected states; evidence has its own labelled semantic colors. Flat surfaces and alignment provide structure. Actual source styles and components are authoritative when an earlier screenshot differs from the final code.
 
+The evidence inspector keeps exact claims, conditions, source passages, AI interpretations, source links, retrieval dates, and verification status distinct. New research uses search, structured synthesis, bounded page retrieval, a separate AI support assessment, and deterministic passage matching. Provider-domain association is a heuristic rather than proof of official identity; legacy summaries are never presented as checked quotations. Older generated consequential claims without recorded support appear unknown at read time without overwriting their stored snapshots.
+
+Next-step guidance respects blocked tasks and unmet dependencies. Explicitly independent tasks may proceed, while older guides use checklist order conservatively. Recovery instructions and documentation links distinguish step-specific evidence from related section guidance. These checks do not execute provider setup or obtain approval.
+
 **Key Characteristics:**
 
 - Dark by default, with an equivalent working light theme.
@@ -253,11 +257,11 @@ Spacing uses the recorded rhythm with contextual intermediate values for individ
 
 ## Elevation & Depth
 
-Resting content is flat. Tonal surfaces, fine borders, gaps, and text hierarchy establish depth. The mobile navigation dialog is the shared surface using the ambient shadow token, with a dark scrim behind it. Its theme-specific shadow values and motion details are recorded in the sidecar. No glow, glass, or heavy gradient is part of this system.
+Resting content is flat. Tonal surfaces, fine borders, gaps, and text hierarchy establish depth. Mobile navigation and the evidence inspector use a dark scrim and contained ambient shadow. Navigation's theme-specific shared shadow values and motion details are recorded in the sidecar; the inspector's local treatment is defined in its CSS module. No glow, glass, or heavy gradient is part of this system.
 
 ### Named Rules
 
-**The Flat Workspace Rule.** Keep resting content panels flat; reserve the shared ambient shadow for the mobile navigation dialog.
+**The Flat Workspace Rule.** Keep resting content panels flat; reserve ambient shadows for modal navigation and evidence inspection.
 
 ## Shapes
 
@@ -293,7 +297,11 @@ Feature summaries, library records, checklist, and evidence panels share a flat 
 
 The six semantic tabs are Overview, Setup steps, Scopes, Approval & review, Common issues, and Sources. The selected tab has violet-wash fill, foreground text, and a readable-violet underline. Arrow, Home, and End keys move focus and selection. Tabs have a minimum height (48px); the panel has a visible 3px focus outline with 8px offset.
 
-The checklist shows this browser's completed count, native checkboxes and status selects, and links to relevant guidance. The next-action panel selects an unfinished step and its official page. The 4px progress track reflects the completed fraction via `scaleX`, with a 0.2s ease-out transform transition. Bookmarks and checklist state are browser-local; public guide URLs share content. A guide distinguishes documentation research from unperformed provider setup.
+The checklist shows this browser's completed count, native checkboxes and status selects, and links to relevant guidance. The next-action panel recommends only unblocked steps whose dependencies are complete. When a task is blocked or dependency-locked, it presents recovery guidance instead; other blockers remain visible. Legacy steps without explicit dependencies use checklist order conservatively. Direct step source IDs take precedence, and fallback links are labelled related documentation. The 4px progress track reflects the completed fraction via `scaleX`, with a 0.2s ease-out transform transition. Bookmarks and checklist state are browser-local; public guide URLs share content. A guide distinguishes documentation research from unperformed provider setup.
+
+### Claim evidence inspector
+
+“Why this requirement?” opens a labelled Radix modal inspection panel with focus trapping, Escape dismissal, focus return, and a 44px close control. The panel fits within mobile viewports and scrolls its own reading area. It separates exact guide claims and applicable conditions from matched source passages and AI assessments. Source summaries are explicitly not quotations; missing or conflicting support, retrieval dates, and provider-domain uncertainty stay visible. A matched passage proves text presence, not factual entailment or a completed OAuth setup.
 
 ### Research timeline and evidence
 

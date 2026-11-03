@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { seedGuides } from "@/lib/seed-guides";
-import { createGuideStore } from "@/lib/server/store";
+import { createGuideStore, localDatabaseUrl } from "@/lib/server/store";
 import { guideToMarkdown } from "@/lib/server/markdown";
 
 const clients: Client[] = [];
@@ -78,9 +78,9 @@ describe("guide persistence", () => {
   });
 
   it("persists across database connections and never silently overwrites a snapshot", async () => {
-    const directory = await mkdtemp(join(tmpdir(), "authpilot-store-"));
+    const directory = await mkdtemp(join(tmpdir(), "authpilot-store-#-"));
     directories.push(directory);
-    const databaseUrl = `file:${join(directory, "test.db").replaceAll("\\", "/")}`;
+    const databaseUrl = localDatabaseUrl(join(directory, "test.db"));
     const guide = {
       ...seedGuides[0],
       id: "persistent-guide",

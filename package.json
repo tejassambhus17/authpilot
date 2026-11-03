@@ -12,6 +12,8 @@
     "test:watch": "node scripts/run-with-node.mjs node_modules/vitest/vitest.mjs",
     "test:e2e": "node scripts/run-with-node.mjs node_modules/@playwright/test/cli.js test",
     "runtime": "node scripts/run-with-node.mjs --version",
+    "test:quality": "node scripts/run-with-node.mjs node_modules/vitest/vitest.mjs run tests/research-quality.test.ts",
+    "check:deployment": "node scripts/run-with-node.mjs --experimental-strip-types scripts/check-deployment.mjs",
     "check": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "dependencies": {

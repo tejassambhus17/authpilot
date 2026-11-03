@@ -12,6 +12,8 @@ The take-home asks for a few varied examples and real-time unfamiliar-provider g
 - Generated guides have persistent URLs. No accounts are introduced for this focused slice; Saved bookmarks and checklist progress are browser-local and independent for each reader.
 - Markdown export makes the guide portable. Source links, retrieval dates, evidence status, blockers, and human handoffs travel with it.
 - Provider documentation can be stale or contradictory. A cited document is evidence, not a guarantee that the provider will approve an app.
+- New research retrieves a bounded set of cited pages, asks a separate AI assessment to evaluate claim support, and matches proposed passages against fetched text. Generated confirmation requires a matched provider-domain passage and supported assessment. This is stronger provenance, not independent semantic certification; the evidence inspector exposes the distinction.
+- Blocked and dependency-locked tasks are not immediately actionable. Unsupported or unclear OAuth cannot produce executable registration/configuration recommendations. Older snapshots conservatively use checklist order and related-documentation labels when direct metadata is absent.
 
 ## Main workflows
 
@@ -26,7 +28,7 @@ The take-home asks for a few varied examples and real-time unfamiliar-provider g
 
 The supplied four-screen reference guides the redesigned charcoal/violet identity, centered Explore form, observed-event research timeline, tabbed guide, and library rows. Dark mode is the default; light mode and the reader's theme choice persist. Responsive navigation, native checklist controls, keyboard tabs, reduced motion, loading states, and useful errors remain part of the working product. Whole-guide “Verified” or “Setup verified” claims are not used because this application does not execute OAuth setup.
 
-The verified implementation passes TypeScript, lint, a production build, **85 unit tests**, and **16 browser journeys**. Browser fixtures cover transport failures only inside tests. A genuine Notion research run on 3 November 2026 produced six official citations, survived reload, reopened from Saved, shared into a fresh session, and exported Markdown. No second request was needed for follow-up verification. Two sampled Notion requirement groups were independently checked against official documentation; this is not certification of the entire output or an executed setup. See `docs/redesign-validation.md` for the evidence and screenshot matrix.
+Before the final engineering pass, the reference redesign passed TypeScript, lint, a production build, **85 unit tests**, and **16 browser journeys**. Current final-pass results, failures, corrections, and production limits are recorded in `docs/final-validation.md`. Browser fixtures cover transport failures only inside tests. A genuine Notion research run on 3 November 2026 produced six official citations, survived reload, reopened from Saved, shared into a fresh session, and exported Markdown. No second request was needed for follow-up verification. Two sampled Notion requirement groups were independently checked against official documentation; this is not certification of the entire output or an executed setup. See `docs/redesign-validation.md` for the evidence and screenshot matrix.
 
 ## Deliberate scope limits
 

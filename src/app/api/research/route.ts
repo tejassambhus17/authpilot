@@ -9,14 +9,29 @@ import {
   assertResearchAccess,
   readSmallJson,
 } from "@/lib/server/request-security";
-import { publicResearchError, ResearchError } from "@/lib/server/errors";
+import {
+  publicResearchError,
+  researchDiagnostic,
+  ResearchError,
+} from "@/lib/server/errors";
+import {
+  assessDeploymentEnvironment,
+  RESEARCH_TIMEOUT_MS,
+} from "@/lib/server/deployment-config";
 
 export const runtime = "nodejs";
-export const maxDuration = 180;
+export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
+    const configuration = assessDeploymentEnvironment(process.env);
+    if (!configuration.serverSecretsSafe)
+      throw new ResearchError(
+        "UNSAFE_SERVER_CONFIGURATION",
+        "Research is disabled because a server credential uses a public environment-variable name. Ask the owner to correct the deployment configuration.",
+        503,
+      );
     assertResearchAccess(request);
     const input = researchInputSchema.safeParse(await readSmallJson(request));
     if (!input.success)
@@ -26,6 +41,12 @@ export async function POST(request: Request) {
           code: "INVALID_INPUT",
         },
         { status: 400 },
+      );
+    if (!configuration.apiKeyConfigured)
+      throw new ResearchError(
+        "API_KEY_MISSING",
+        "Live research needs an OpenAI API key. Add OPENAI_API_KEY to .env.local and restart the app. The existing guides are ready to use.",
+        503,
       );
     const transport = new OpenAIResearchTransport();
     const store = await getStore();
@@ -50,7 +71,7 @@ export async function POST(request: Request) {
     const cancel = () => abort.abort();
     request.signal.addEventListener("abort", cancel, { once: true });
     if (request.signal.aborted) cancel();
-    const timer = setTimeout(() => abort.abort(), 150_000);
+    const timer = setTimeout(() => abort.abort(), RESEARCH_TIMEOUT_MS);
     const encoder = new TextEncoder();
     let closed = false;
     const stream = new ReadableStream<Uint8Array>({
@@ -73,6 +94,10 @@ export async function POST(request: Request) {
           });
         } catch (error) {
           const failure = publicResearchError(error);
+          console.error("AuthPilot research failure", {
+            code: failure.code,
+            ...researchDiagnostic(error),
+          });
           emit({
             phase: "error",
             message: failure.message,

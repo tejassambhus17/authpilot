@@ -69,3 +69,28 @@ None required by this review.
 
 final result: passed
 
+---
+
+## Final engineering and product pass — 3 November 2026
+
+**Independent review disposition: ship.** No actionable P0/P1/P2 finding remains in the reviewed refinement. The prior redesign review above remains the record for the unchanged connected screens and original reference comparison.
+
+The finish reviewer reopened the unchanged original reference, the prior desktop guide, and all six final captures. The new claim inspector and blocked-state panel preserve the established typography, flat charcoal/violet surfaces, guide hierarchy, and mobile reading behavior. The inspector distinguishes exact claims, applicability, quotations, AI assessments, source information, verification, and limitations; legacy summaries remain explicitly unverified as quotations. Blocked-state recovery and related-documentation fallback remain explicit.
+
+| Final capture | CSS viewport / PNG | Reviewed state |
+| --- | --- | --- |
+| desktop-legacy-inspector.png | 1440 × 900 | Legacy requirement, retained-summary limitation |
+| mobile-legacy-inspector.png | 390 × 844 | Contained inspector with visible close control |
+| desktop-blocker-panel.png | 1440 × 900 | Blocked task, recovery, conservative legacy ordering |
+| mobile-blocker-panel.png | 390 × 844 | Recovery and documentation action reflow |
+| desktop-matched-inspector.png | 1440 × 900 | Genuine Asana requirement with matched quotations and AI assessments |
+| mobile-matched-inspector.png | 390 × 844 | Matched quotations and assessments within scrolling inspector |
+
+Evidence is under `.impeccable/review/final/`. `capture-metadata.json` and `matched-capture-metadata.json` record zero page/dialog horizontal overflow, browser errors, and research POSTs during capture. These are intentionally scrolled state captures rather than full-page screenshots. The genuine Asana metadata records applicable conditions and source retrieval at 15:28:03 UTC before claim checking at 15:29:02 UTC on 3 November 2026. All six images were opened; no image was substituted for a failed live request.
+
+The final validation packet reports TypeScript, lint, production build, **192 unit tests across 12 files**, and **19/19 browser journeys** passing. The 18 research-quality cases, eight evidence integration tests, and 46 retrieval guard tests are included in that unit total. The genuine final Asana run took 173 seconds, selected ten sources, retrieved eight pages, and retained 28 claims passing support/passage checks, 60 matched passages, and seven unknown claims. Reload/export HTTP 200 and save/reopen/share/fresh-session/checklist follow-up passed without another research POST. These are reported execution results; the finish reviewer did not rerun runtime tests or make paid calls.
+
+Local deployment configuration passes; hosted configuration correctly fails while the remote Turso pair is absent. No push or deployment occurred, and no OAuth registration, token exchange, or provider approval was tested. The earlier Dropbox failure and pilot limitations remain disclosed in [final validation](docs/final-validation.md). The review covers the supplied visual evidence and sampled presentation code, not independent certification of every generated interpretation or a hosted environment.
+
+The complete five-section finish report is [reviewer-report.md](.impeccable/review/final/reviewer-report.md). No additional visual change is required by this review.
+

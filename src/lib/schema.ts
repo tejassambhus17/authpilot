@@ -16,6 +16,26 @@ export const sourceSchema = z
     retrievedAt: z.iso.datetime(),
     publisher: z.string().min(1),
     excerpt: z.string().max(800),
+    retrieval: z
+      .object({
+        status: z.enum(["retrieved", "unavailable"]),
+        checkedAt: z.iso.datetime(),
+        contentHash: z.string().optional(),
+        authority: z.enum(["provider-domain", "unverified"]),
+        detail: z.string(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
+export const supportingEvidenceSchema = z
+  .object({
+    sourceId: z.string().min(1),
+    passage: z.string().min(1).max(1800),
+    assessment: z.enum(["supports", "contradicts", "insufficient"]),
+    explanation: z.string().max(1200),
+    match: z.enum(["matched", "not-found", "unavailable"]).optional(),
+    checkedAt: z.iso.datetime().optional(),
   })
   .strict();
 export const claimSchema = z
@@ -23,6 +43,21 @@ export const claimSchema = z
     text: z.string().min(1),
     status: evidenceStatusSchema,
     sourceIds: z.array(z.string()),
+    conditions: z.array(z.string().max(500)).max(10).optional(),
+    evidence: z.array(supportingEvidenceSchema).max(10).optional(),
+    verification: z
+      .object({
+        status: z.enum([
+          "passage-matched",
+          "unverified",
+          "conflicting",
+          "unsupported",
+        ]),
+        explanation: z.string(),
+        checkedAt: z.iso.datetime(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 export const sectionIds = [
@@ -51,6 +86,9 @@ export const stepSchema = z
     description: z.string().min(1),
     actor: z.enum(["developer", "agent", "provider"]),
     sectionId: z.enum(sectionIds),
+    dependsOn: z.array(z.string()).max(20).optional(),
+    sourceIds: z.array(z.string()).max(10).optional(),
+    recovery: z.string().max(1500).optional(),
   })
   .strict();
 export const guideContentSchema = z
@@ -75,6 +113,39 @@ export const guideContentSchema = z
       })
       .strict(),
     warnings: z.array(z.string()),
+  })
+  .strict();
+// New research uses required fields for strict structured output. Stored snapshots
+// remain backward compatible; server-only verification is never model-authored.
+const researchClaimSchema = claimSchema
+  .omit({ verification: true, evidence: true })
+  .extend({
+    conditions: z.array(z.string().max(500)).max(10),
+    evidence: z
+      .array(supportingEvidenceSchema.omit({ match: true, checkedAt: true }))
+      .max(10),
+  });
+export const researchGuideContentSchema = guideContentSchema
+  .extend({
+    effort: researchClaimSchema,
+    approval: researchClaimSchema,
+    blockers: z.array(researchClaimSchema),
+    sections: z
+      .array(
+        sectionSchema.extend({ claims: z.array(researchClaimSchema).min(1) }),
+      )
+      .length(9),
+    sources: z.array(sourceSchema.omit({ retrieval: true })).max(25),
+    checklist: z
+      .array(
+        stepSchema.extend({
+          dependsOn: z.array(z.string()).max(20),
+          sourceIds: z.array(z.string()).max(10),
+          recovery: z.string().max(1500),
+        }),
+      )
+      .min(1)
+      .max(20),
   })
   .strict();
 export const guideSchema = guideContentSchema
@@ -182,6 +253,25 @@ export function validateGuideEvidence(guide: GuideContent): void {
     throw new Error("Every guide section must appear exactly once.");
   if (new Set(guide.checklist.map((s) => s.id)).size !== guide.checklist.length)
     throw new Error("Duplicate checklist IDs.");
+  const steps = new Map(guide.checklist.map((step) => [step.id, step]));
+  for (const step of guide.checklist) {
+    if (step.sourceIds?.some((id) => !ids.has(id)))
+      throw new Error("A checklist step references a missing source.");
+    if (step.dependsOn?.some((id) => !steps.has(id) || id === step.id))
+      throw new Error("A checklist dependency is missing or refers to itself.");
+  }
+  const visiting = new Set<string>();
+  const visited = new Set<string>();
+  function visit(id: string) {
+    if (visiting.has(id))
+      throw new Error("Checklist dependencies must not contain a cycle.");
+    if (visited.has(id)) return;
+    visiting.add(id);
+    for (const dependency of steps.get(id)?.dependsOn || []) visit(dependency);
+    visiting.delete(id);
+    visited.add(id);
+  }
+  for (const id of steps.keys()) visit(id);
   const claims = [
     guide.effort,
     guide.approval,

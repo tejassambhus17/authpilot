@@ -7,7 +7,23 @@ function claimLine(claim: Claim, guide: Guide): string {
     .filter((source) => source !== undefined)
     .map((source) => `[${source.id}](${source.url})`)
     .join(" ");
-  return `- **${claim.status}**: ${claim.text}${links ? ` ${links}` : ""}`;
+  return [
+    `- **${claim.status}**: ${claim.text}${links ? ` ${links}` : ""}`,
+    ...(claim.conditions?.length
+      ? [`  - Applicable conditions: ${claim.conditions.join("; ")}`]
+      : []),
+    ...(claim.verification
+      ? [
+          `  - Evidence check: ${claim.verification.status} at ${claim.verification.checkedAt}. ${claim.verification.explanation}`,
+        ]
+      : [
+          `  - No server-checked passage was retained in this snapshot. Citation summaries are not quotations.`,
+        ]),
+    ...(claim.evidence || []).map(
+      (item) =>
+        `  - ${item.match === "matched" ? "Matched source statement" : "Unverified proposed passage"} (${item.sourceId}): ${item.passage}\n    AI assessment: ${item.assessment}. ${item.explanation}`,
+    ),
+  ].join("\n");
 }
 
 export function guideToMarkdown(guide: Guide): string {
@@ -39,9 +55,23 @@ export function guideToMarkdown(guide: Guide): string {
     ]),
     "## Action checklist",
     "",
-    ...guide.checklist.map(
-      (step) =>
+    ...guide.checklist.map((step) =>
+      [
         `- [ ] **${step.title}** (${step.actor}; ${step.sectionId}) — ${step.description}`,
+        step.dependsOn
+          ? `  - Dependencies: ${step.dependsOn.length ? step.dependsOn.join(", ") : "No recorded prerequisites"}`
+          : "  - Dependency metadata was not captured; checklist order is used conservatively.",
+        ...(step.sourceIds?.length
+          ? [
+              `  - Step documentation: ${step.sourceIds
+                .map((id) => guide.sources.find((source) => source.id === id))
+                .filter((source) => source !== undefined)
+                .map((source) => `[${source.id}](${source.url})`)
+                .join(" ")}`,
+            ]
+          : []),
+        ...(step.recovery ? [`  - If blocked: ${step.recovery}`] : []),
+      ].join("\n"),
     ),
     "",
     "Checklist boxes are intentionally blank: progress belongs to the current browser, not the shared guide.",
@@ -80,12 +110,17 @@ export function guideToMarkdown(guide: Guide): string {
       `- URL: ${source.url}`,
       `- Publisher: ${source.publisher}`,
       `- Retrieved: ${source.retrievedAt}`,
-      `- Supporting evidence summary: ${source.excerpt}`,
+      `- Supporting evidence summary (not a quotation): ${source.excerpt}`,
+      ...(source.retrieval
+        ? [
+            `- Page retrieval: ${source.retrieval.status} at ${source.retrieval.checkedAt}; ${source.retrieval.authority}. ${source.retrieval.detail}`,
+          ]
+        : []),
       "",
     ]),
     "## Evidence methodology",
     "",
-    "Source-confirmed means documentation-backed, not a successful setup attempt. Evidence excerpts are supporting summaries unless explicitly described as quotations. Agent-tested would require an actual recorded execution; AuthPilot does not execute OAuth setup and never emits that status. Estimates are planning judgments, and unknowns are unresolved. Retrieval dates identify the research snapshot, not the provider's publication date.",
+    "Source-confirmed means documentation-backed, not a successful setup attempt. New research requires a server-matched passage in a retrieved provider-domain document and a separate AI support assessment; that assessment can still be wrong. Domain association is not independent proof of publisher identity. Curated guides have recorded manual source audits. Older researched approval/distribution claims without claim-level evidence are displayed as unknown without overwriting their stored snapshots. Source excerpts are summaries, not quotations. Agent-tested would require an actual recorded execution; AuthPilot does not execute OAuth setup and never emits that status. Estimates are planning judgments, and unknowns are unresolved. Retrieval dates identify the research snapshot, not the provider's publication date.",
     "",
   ].join("\n");
 }

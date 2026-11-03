@@ -1,5 +1,9 @@
 # AuthPilot
 
+**Hosted URL:** not deployed; push and deployment await the owner's confirmation. A local preview is not a hosted submission.
+
+[Demonstration script](#demonstration-script) · [Final validation](docs/final-validation.md) · [Research-quality benchmark](docs/research-quality.md) · [Deployment readiness](docs/deployment-readiness.md)
+
 An OAuth integration navigator for developers and agent builders. Explore GitHub, Slack, and Google guides, save useful guides, track setup steps, and research an unfamiliar provider using a real web-search agent. Guides expose requirements, effort estimates, approval blockers, source evidence, and the actions that need a human.
 
 Built as a focused working slice of the APM Integrations take-home. A provider OAuth app is the developer's client registration; it is separate from each end user's connection. AuthPilot helps with that registration and distribution path.
@@ -57,6 +61,8 @@ No variable holding credentials should be prefixed `NEXT_PUBLIC_`. Never paste O
 - **Reference-led, usable design.** The charcoal/violet interface defaults to dark mode and supports a persisted light theme, responsive navigation, accessible tabs, reduced motion, loading states, and recoverable errors. Guide tabs organize Overview, Setup steps, Scopes, Approval & review, Common issues, and Sources. Library counts and categories derive from real content.
 - **A usable guide beats a broad catalog.** Three initial providers demonstrate distinct problems: GitHub permissions and organization restrictions, Slack Marketplace distribution and review, and Google consent audiences and scope verification.
 - **Evidence is part of the interface.** Requirements show source-confirmed, estimate, or unknown status with clickable sources and retrieval dates. Agent-tested exists in the evidence vocabulary, but this build rejects that label because it never performs OAuth setup.
+- **Inspect the reasoning.** “Why this requirement?” exposes the exact claim, applicable conditions, supporting passages, AI interpretation, documentation links, retrieval information, and verification status. A matched passage establishes text presence; the separate AI support assessment can still be wrong. Retained summaries are never presented as source quotations.
+- **Blockers change the next action.** Blocked and dependency-locked tasks are excluded from immediately actionable recommendations. Recovery guidance and dependencies remain visible. Direct step documentation is distinguished from related section documentation; older snapshots conservatively use checklist order when dependency metadata is absent.
 - **Real research, honest progress.** An unfamiliar provider goes through real hosted web search, constrained synthesis, evidence checks, and durable save. Progress events follow observed API and orchestration events; there are no artificial activity timers.
 - **Human handoffs are explicit.** The agent can investigate and organize documentation. The developer signs in, decides scopes, configures redirects, protects credentials, tests their integration, and handles provider approval.
 - **Share content; keep progress personal.** Guide URLs are public and persistent. Saved bookmarks and the four checklist states use the current browser's local storage, so opening a shared guide does not change another developer's saved items or setup state. Saved is a personal convenience without an account or collaboration service.
@@ -74,7 +80,11 @@ Explore / provider library / research form / guide reader
                │
      OpenAI hosted web_search → actual sources
                │
-     Structured synthesis → Zod + evidence checks
+     Structured synthesis → Zod + citation provenance
+               │
+     Bounded HTTPS page retrieval → separate AI support assessment
+               │
+     Exact passage + provider-domain + support guard
                │
      libSQL persistence → /guides/<id>
 ```
@@ -83,7 +93,9 @@ Explore / provider library / research form / guide reader
 
 Research rejects malformed output, invented source references, and claims of successful setup testing. Unknown or unsupported OAuth providers produce explicit uncertainty rather than invented registration instructions. The server handles unavailable configuration and upstream failures without returning API keys or raw internal errors.
 
-Before saving, an evidence guard downgrades source-confirmed claims that explicitly describe uncertainty to `unknown`, preserving their citations as context and recording a warning. This prevents an unresolved fact from carrying a confirmed badge; it does not replace semantic review of the linked documentation.
+Before saving, new generated source-confirmed claims require both a server-matched passage from a retrieved provider-domain document and a separate AI assessment of support. Missing, conflicting, or insufficient evidence is marked `unknown`. Model-authored verification stamps are overwritten. Domain association is a heuristic, not independent proof of publisher ownership; an AI support assessment is not factual certification. Curated guides retain their recorded manual audits. Older researched consequential claims without claim-level checks are conservatively shown as unknown at read time without overwriting their immutable database snapshots.
+
+`source-documents.ts` retrieves at most eight selected sources, four concurrently, with ten-second page deadlines and two-MB response limits. It checks and pins public IPv4 DNS addresses into TLS connections, rejects private/reserved hosts and unsafe redirects, and fails closed on inaccessible, oversized, truncated, or unsupported content. Full page text is not stored in guides; matched passages and retrieval metadata are retained.
 
 ## Evidence and validation
 
@@ -97,24 +109,42 @@ The live agent is instructed to prioritize official provider documentation. Sche
 npm run typecheck
 npm run lint
 npm test
+npm run test:quality
 npm run build
 npx playwright install chromium
 npm run test:e2e
+npm run check:deployment
+npm run check:deployment -- --vercel
 ```
 
 `npm run check` runs the first four commands. Unit tests cover validation, evidence integrity, research failure handling, and persistence. The browser suite covers library search and recovery, example guides, research routing, checklist reload persistence, save/unsave across navigation and reload, fresh-session sharing, Markdown export, themes, keyboard tabs, mobile navigation, retry, cancellation, and interrupted streams. See [testing notes](docs/testing.md) and [redesign validation](docs/redesign-validation.md).
 
-**Verified:** 85 unit tests and all 16 browser journeys passed, alongside TypeScript, lint, and a production build. A genuine **Linear** run with GPT-5.5 selected **10 official sources**, persisted after reload, and exported Markdown. On 3 November 2026, one genuine **Notion** run through the redesigned UI produced a persisted guide with **six official sources**; reload, Saved, sharing, fresh-session access, and Markdown HTTP 200 were checked without a second research request. Bounded independent audits corroborated the sampled lifecycle and approval distinctions, including optional Notion Marketplace listing versus public OAuth usage. Earlier model errors and corrective work remain visible in [the live validation record](docs/live-validation.md), with an [unaltered Linear example](docs/examples/linear-final.md); the [redesign report](docs/redesign-validation.md) records the Notion audit, real progress observations, and responsive screenshots. Generated validation guides are local research results, not additional preloaded examples in a fresh checkout.
+**Earlier verification, before this final pass:** 85 unit tests and all 16 browser journeys passed, alongside TypeScript, lint, and a production build. A genuine **Linear** run with GPT-5.5 selected **10 official sources**, persisted after reload, and exported Markdown. On 3 November 2026, one genuine **Notion** run through the redesigned UI produced a persisted guide with **six official sources**; reload, Saved, sharing, fresh-session access, and Markdown HTTP 200 were checked without a second research request. Bounded independent audits corroborated the sampled lifecycle and approval distinctions, including optional Notion Marketplace listing versus public OAuth usage. Earlier model errors and corrective work remain visible in [the live validation record](docs/live-validation.md), with an [unaltered Linear example](docs/examples/linear-final.md); the [redesign report](docs/redesign-validation.md) records the Notion audit, real progress observations, and responsive screenshots. Generated validation guides are local research results, not additional preloaded examples in a fresh checkout.
+
+The final engineering pass passed **192 unit tests**, **19 browser journeys**, TypeScript, lint, and a production build; actual live outcomes, failures, and corrections are recorded in [final validation](docs/final-validation.md). The [research-quality benchmark](docs/research-quality.md) records five actual baseline safety failures, their corrections, and repeatable adversarial/control cases. Synthetic passages and fixture review verdicts test deterministic guard behavior; they do **not** measure live model semantic accuracy.
+
+`check:deployment` returns sanitized configuration booleans and fixed issue codes without API or database calls. `--vercel` checks the hosted requirements and fails when remote storage is absent. Presence/syntax is separate from connectivity and deployed verification.
 
 You need your own server-side OpenAI key to use live research. Automated transport and HTTP fixtures test failures and orchestration without providing a production mock mode. No provider OAuth app was registered or approved during verification.
+
+## Demonstration script
+
+Allow **2–3 minutes of narration**; a real research request may take longer. Keep its progress visible while exploring an existing guide in a second tab.
+
+1. **0:00–0:25:** Explain developer-owned OAuth app registration versus each end user's connection. Open an example and show effort, approval uncertainty, and conditions.
+2. **0:25–0:45:** Enter a provider absent from the library and explicitly start research. Show actual events and sources. Never substitute a saved snapshot for a live result.
+3. **0:45–1:30:** In a second tab, inspect a clearly identified existing guide. Open “Why this requirement?” and distinguish source text, AI interpretation, and unknowns. Mark a task Blocked and show dependencies and recovery.
+4. **1:30–2:10:** Save/reopen the guide, reload checklist progress, export Markdown, and open the share URL in a fresh/private browser with independent progress.
+5. **2:10–3:00:** Return to the real request. Open its guide if complete; otherwise show its honest current state and explain that durations vary. Finish with one documented correction, benchmark results, and the developer/provider handoff.
 
 ## Deploy to Vercel
 
 1. Push this repository to your Git host and import it into Vercel as a Next.js project. Select Node.js 24 (or a supported Node 22 release).
 2. Create a Turso database and set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in Vercel. Local filesystem writes are not durable serverless persistence.
 3. Set `OPENAI_API_KEY` and optionally `OPENAI_MODEL` and `RESEARCH_ACCESS_TOKEN` as server-only environment variables.
-4. Deploy using the default `npm run build` command. Use a runtime/function duration plan that can support the research request.
-5. Open `/api/health`, verify readiness, then test an unfamiliar provider and reload its generated guide URL.
+4. After owner confirmation, deploy using `npm run build`. Verify the actual project/plan permits the route's `maxDuration = 300`; the application deadline is 270 seconds and remote database requests have a 15-second deadline. A source declaration does not establish deployed settings. See [Vercel duration documentation](https://vercel.com/docs/functions/configuring-functions/duration).
+5. Run the configuration checker in the intended environment. Open `/api/health`, then verify real model access, remote database connectivity, cold-start persistence, unfamiliar-provider research, and a fresh-session share. Health reports configuration only, with `connectivityVerified: false`.
+6. Add the actual hosted URL at the top of this README only after it exists and has been tested. Follow [deployment readiness](docs/deployment-readiness.md) and retain any unexecuted checks.
 
 No external deployment was created by this repository-only build. A working hosted submission link requires the operator's Vercel and database setup.
 
@@ -126,6 +156,7 @@ No external deployment was created by this repository-only build. A working host
 - Live research incurs OpenAI tool/model costs and is subject to account access, rate limits, source accessibility, and model reliability. A shared access token is a small spending gate, not full multi-tenant authorization.
 - Persistent spending controls limit research to five requests per client/network per hour and thirty requests per deployment per hour. Local development shares one client bucket. These are application limits, separate from upstream provider rate limits.
 - An official citation is not proof that an app will be accepted. Provider policy, organization administration, scopes, app behavior, and reviewer judgment affect approval.
+- The separate support assessment adds latency and another model judgment. Exact passage matching does not establish entailment or independently certify publisher identity. JavaScript-only, blocked, IPv6-only, contradictory, or out-of-window documents may remain unverified; unsupported approval and timing assertions remain unknown.
 - No provider sign-in, OAuth app creation, secret collection, token exchange, security assessment, or approval submission was automated. Hands-on effort is an estimate unless explicitly documented otherwise.
 
 Repository guidance: [AGENTS.md](AGENTS.md), [project context](PROJECT_CONTEXT.md), [product](PRODUCT.md), and [design system](DESIGN.md).

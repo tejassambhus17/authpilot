@@ -1,5 +1,7 @@
 # Verification
 
+The final engineering pass on 3 November 2026 passed **192 unit tests**, **19 browser journeys**, TypeScript, lint, and a production build. The focused research-quality benchmark passed **18 deterministic cases**, with **8** separate evidence-path integration checks and **46** source-retrieval guard tests included in the unit total. These subsets overlap the total and must not be added to it. See [final validation](final-validation.md) for actual live outcomes, retained failures, corrections, and unexecuted production checks.
+
 Use Node.js 22.12 or newer; the recorded unit run used Node.js 24.22.1.
 
 Run the checks from the repository root:

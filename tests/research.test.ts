@@ -15,7 +15,7 @@ import {
   type ResearchMaterial,
   type ResearchTransport,
 } from "@/lib/server/research";
-import { publicResearchError } from "@/lib/server/errors";
+import { publicResearchError, researchDiagnostic } from "@/lib/server/errors";
 
 const date = "2026-11-03T10:00:00.000Z";
 const url = "https://docs.example.com/oauth";
@@ -85,6 +85,25 @@ function content(): GuideContent {
     },
     warnings: ["No setup was executed."],
   };
+}
+
+function wireContent() {
+  const result = content();
+  for (const claim of [
+    result.effort,
+    result.approval,
+    ...result.sections.flatMap((section) => section.claims),
+  ]) {
+    claim.conditions = [];
+    claim.evidence = [];
+  }
+  result.checklist = result.checklist.map((step) => ({
+    ...step,
+    dependsOn: [],
+    sourceIds: ["s1"],
+    recovery: "Review the provider documentation before retrying.",
+  }));
+  return result;
 }
 
 describe("research provenance", () => {
@@ -161,25 +180,65 @@ describe("research provenance", () => {
     "No published review process for public apps was found.",
     "No published approval timeline or SLA was found.",
     "No app review process is documented in these sources.",
-  ])("downgrades an explicitly uncertain confirmed claim: %s", text => {
+  ])("downgrades an explicitly uncertain confirmed claim: %s", (text) => {
     const generated = content();
     generated.sections[0].claims[0].text = text;
     const guide = validateResearchedGuide(generated, material, date);
-    expect(guide.sections[0].claims[0]).toEqual({text, status: "unknown", sourceIds: ["s1"]});
-    expect(guide.warnings.some(warning => warning.includes("Conservative evidence labeling"))).toBe(true);
+    expect(guide.sections[0].claims[0]).toMatchObject({
+      text,
+      status: "unknown",
+      sourceIds: ["s1"],
+      verification: { status: "unverified" },
+    });
+    expect(
+      guide.warnings.some((warning) =>
+        warning.includes("Conservative evidence labeling"),
+      ),
+    ).toBe(true);
   });
 
-  it("normalizes uncertainty across effort, approval, blockers and sections while retaining supported positive claims", () => {
+  it("normalizes explicit uncertainty and requires passage assessment before retaining positive claims", () => {
     const generated = content();
-    generated.effort = {text: "Hands-on time is unknown.", status: "source-confirmed", sourceIds: ["s1"]};
-    generated.approval = {text: "No published approval timing was found.", status: "source-confirmed", sourceIds: ["s1"]};
-    generated.blockers = [{text: "Workspace approval requirements are not established.", status: "source-confirmed", sourceIds: ["s1"]}];
-    generated.sections[0].claims[0].text = "It is unclear which app types require verification.";
-    generated.sections[1].claims[0].text = "Submit an application for directory listing; listing requires provider review.";
+    generated.effort = {
+      text: "Hands-on time is unknown.",
+      status: "source-confirmed",
+      sourceIds: ["s1"],
+    };
+    generated.approval = {
+      text: "No published approval timing was found.",
+      status: "source-confirmed",
+      sourceIds: ["s1"],
+    };
+    generated.blockers = [
+      {
+        text: "Workspace approval requirements are not established.",
+        status: "source-confirmed",
+        sourceIds: ["s1"],
+      },
+    ];
+    generated.sections[0].claims[0].text =
+      "It is unclear which app types require verification.";
+    generated.sections[1].claims[0].text =
+      "Submit an application for directory listing; listing requires provider review.";
     const guide = validateResearchedGuide(generated, material, date);
-    expect([guide.effort, guide.approval, ...guide.blockers, guide.sections[0].claims[0]].every(claim => claim.status === "unknown")).toBe(true);
-    expect(guide.sections[1].claims[0]).toEqual(generated.sections[1].claims[0]);
-    expect(guide.warnings.filter(warning => warning.includes("Conservative evidence labeling"))).toHaveLength(1);
+    expect(
+      [
+        guide.effort,
+        guide.approval,
+        ...guide.blockers,
+        guide.sections[0].claims[0],
+      ].every((claim) => claim.status === "unknown"),
+    ).toBe(true);
+    expect(guide.sections[1].claims[0]).toMatchObject({
+      text: generated.sections[1].claims[0].text,
+      status: "unknown",
+      verification: { status: "unverified" },
+    });
+    expect(
+      guide.warnings.filter((warning) =>
+        warning.includes("Conservative evidence labeling"),
+      ),
+    ).toHaveLength(1);
     expect(guide.warnings.join(" ")).toContain("4 claim(s)");
   });
 
@@ -299,6 +358,23 @@ describe("research orchestration", () => {
   });
 
   it("never leaks upstream API details or secrets into public errors", () => {
+    const diagnostic = researchDiagnostic({
+      name: "APIConnectionError",
+      status: 502,
+      message: "private upstream response",
+      code: "secret-token",
+      cause: { code: "ECONNRESET", message: "private credential" },
+    });
+    expect(diagnostic).toEqual({
+      kind: "APIConnectionError",
+      upstreamStatus: 502,
+      reason: "ECONNRESET",
+    });
+    expect(JSON.stringify(diagnostic)).not.toContain("private");
+    expect(JSON.stringify(diagnostic)).not.toContain("secret-token");
+    expect(publicResearchError({ name: "APIConnectionError" }).code).toBe(
+      "RESEARCH_CONNECTION",
+    );
     expect(
       publicResearchError(new Error("sk-secret upstream details")).message,
     ).not.toContain("sk-secret");
@@ -316,140 +392,150 @@ describe("installed OpenAI SDK wire compatibility", () => {
     { configured: "", expected: "gpt-5.5", reasoning: true },
     { configured: "gpt-5.5", expected: "gpt-5.5", reasoning: true },
     { configured: "gpt-4.1", expected: "gpt-4.1", reasoning: false },
-  ])("sends compatible real SDK requests for configured model '$configured'", async ({configured, expected, reasoning}) => {
-    vi.stubEnv("OPENAI_API_KEY", "test-placeholder-not-a-real-api-key");
-    vi.stubEnv("OPENAI_MODEL", configured);
-    const requests: Record<string, unknown>[] = [];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
-        const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
-        requests.push(body);
-        if (body.stream) {
-          const response = {
+  ])(
+    "sends compatible real SDK requests for configured model '$configured'",
+    async ({ configured, expected, reasoning }) => {
+      vi.stubEnv("OPENAI_API_KEY", "test-placeholder-not-a-real-api-key");
+      vi.stubEnv("OPENAI_MODEL", configured);
+      const requests: Record<string, unknown>[] = [];
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          const body = JSON.parse(String(init?.body)) as Record<
+            string,
+            unknown
+          >;
+          requests.push(body);
+          if (body.stream) {
+            const response = {
+              status: "completed",
+              output: [
+                {
+                  type: "web_search_call",
+                  action: {
+                    type: "search",
+                    sources: [{ url, title: "Official OAuth guide" }],
+                  },
+                },
+                {
+                  type: "message",
+                  content: [
+                    {
+                      type: "output_text",
+                      text: material.text,
+                      annotations: [
+                        {
+                          type: "url_citation",
+                          url,
+                          title: "Official OAuth guide",
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            };
+            const events = [
+              {
+                type: "response.web_search_call.searching",
+                sequence_number: 1,
+                output_index: 0,
+                item_id: "search-test",
+              },
+              { type: "response.completed", sequence_number: 2, response },
+            ];
+            return new Response(
+              events
+                .map(
+                  (event) =>
+                    `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`,
+                )
+                .join("") + "data: [DONE]\n\n",
+              { headers: { "Content-Type": "text/event-stream" } },
+            );
+          }
+          return Response.json({
+            id: "response-test",
+            object: "response",
             status: "completed",
             output: [
               {
-                type: "web_search_call",
-                action: {
-                  type: "search",
-                  sources: [{ url, title: "Official OAuth guide" }],
-                },
-              },
-              {
+                id: "message-test",
                 type: "message",
+                status: "completed",
+                role: "assistant",
                 content: [
                   {
                     type: "output_text",
-                    text: material.text,
-                    annotations: [
-                      {
-                        type: "url_citation",
-                        url,
-                        title: "Official OAuth guide",
-                      },
-                    ],
+                    text: JSON.stringify(wireContent()),
+                    annotations: [],
                   },
                 ],
               },
             ],
-          };
-          const events = [
-            {
-              type: "response.web_search_call.searching",
-              sequence_number: 1,
-              output_index: 0,
-              item_id: "search-test",
-            },
-            { type: "response.completed", sequence_number: 2, response },
-          ];
-          return new Response(
-            events
-              .map(
-                (event) =>
-                  `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`,
-              )
-              .join("") + "data: [DONE]\n\n",
-            { headers: { "Content-Type": "text/event-stream" } },
-          );
-        }
-        return Response.json({
-          id: "response-test",
-          object: "response",
-          status: "completed",
-          output: [
-            {
-              id: "message-test",
-              type: "message",
-              status: "completed",
-              role: "assistant",
-              content: [
-                {
-                  type: "output_text",
-                  text: JSON.stringify(content()),
-                  annotations: [],
-                },
-              ],
-            },
-          ],
-        });
-      }),
-    );
-    const transport = new OpenAIResearchTransport();
-    const events: ResearchEvent[] = [];
-    const research = await transport.search(
-      "Example",
-      (event) => events.push(event),
-      new AbortController().signal,
-    );
-    expect(research).toEqual(material);
-    expect(events.map((event) => event.phase)).toEqual([
-      "searching",
-      "source-found",
-    ]);
-    expect(
-      await transport.synthesize(
+          });
+        }),
+      );
+      const transport = new OpenAIResearchTransport();
+      const events: ResearchEvent[] = [];
+      const research = await transport.search(
         "Example",
-        research,
+        (event) => events.push(event),
         new AbortController().signal,
-      ),
-    ).toEqual(content());
-    expect(requests[0]).toMatchObject({
-      tool_choice: "required",
-      stream: true,
-      store: false,
-      tools: [{ type: "web_search" }],
-      include: ["web_search_call.action.sources"],
-    });
-    expect(requests[1]).toMatchObject({
-      store: false,
-      text: { format: { type: "json_schema", strict: true } },
-    });
-    expect(JSON.stringify(requests[1])).not.toContain('"format":"uri"');
-    // The safety policy must reach both real SDK requests; a schema/provenance
-    // check alone cannot catch a valid citation used for the wrong app lifecycle.
-    for (const request of requests) {
-      expect(request.model).toBe(expected);
-      if (reasoning) expect(request.reasoning).toEqual({effort: "low"});
-      else expect(request).not.toHaveProperty("reasoning");
-      const instructions = String(request.instructions);
-      expect(instructions).toMatch(
-        /client registration; audience and public installability;/i,
       );
-      expect(instructions).toMatch(
-        /administrator authorization; provider app verification; commercial distribution; and directory\/marketplace listing/i,
-      );
-      expect(instructions).toMatch(
-        /only state that listing is mandatory for public OAuth installs if official documentation explicitly connects/i,
-      );
-      expect(instructions).toMatch(
-        /do not infer .*immediate registration.*absence of a documented review process/is,
-      );
-      expect(instructions).toMatch(
-        /approval timing must be unknown when there is no cited, published provider timing or SLA/i,
-      );
-      expect(instructions).toMatch(/missing timing does not mean a missing review process/i);
-      expect(instructions).toMatch(/preserve documented listing submission and review requirements even when their timing is unknown/i);
-    }
-  });
+      expect(research).toEqual(material);
+      expect(events.map((event) => event.phase)).toEqual([
+        "searching",
+        "source-found",
+      ]);
+      expect(
+        await transport.synthesize(
+          "Example",
+          research,
+          new AbortController().signal,
+        ),
+      ).toEqual(wireContent());
+      expect(requests[0]).toMatchObject({
+        tool_choice: "required",
+        stream: true,
+        store: false,
+        tools: [{ type: "web_search" }],
+        include: ["web_search_call.action.sources"],
+      });
+      expect(requests[1]).toMatchObject({
+        store: false,
+        text: { format: { type: "json_schema", strict: true } },
+      });
+      expect(JSON.stringify(requests[1])).not.toContain('"format":"uri"');
+      // The safety policy must reach both real SDK requests; a schema/provenance
+      // check alone cannot catch a valid citation used for the wrong app lifecycle.
+      for (const request of requests) {
+        expect(request.model).toBe(expected);
+        if (reasoning) expect(request.reasoning).toEqual({ effort: "low" });
+        else expect(request).not.toHaveProperty("reasoning");
+        const instructions = String(request.instructions);
+        expect(instructions).toMatch(
+          /client registration; audience and public installability;/i,
+        );
+        expect(instructions).toMatch(
+          /administrator authorization; provider app verification; commercial distribution; and directory\/marketplace listing/i,
+        );
+        expect(instructions).toMatch(
+          /only state that listing is mandatory for public OAuth installs if official documentation explicitly connects/i,
+        );
+        expect(instructions).toMatch(
+          /do not infer .*immediate registration.*absence of a documented review process/is,
+        );
+        expect(instructions).toMatch(
+          /approval timing must be unknown when there is no cited, published provider timing or SLA/i,
+        );
+        expect(instructions).toMatch(
+          /missing timing does not mean a missing review process/i,
+        );
+        expect(instructions).toMatch(
+          /preserve documented listing submission and review requirements even when their timing is unknown/i,
+        );
+      }
+    },
+  );
 });

@@ -4,7 +4,27 @@ import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { guideSchema, validateGuideEvidence, type Guide } from "@/lib/schema";
 import { seedGuides } from "@/lib/seed-guides";
+import { guideForReading } from "@/lib/claim-evidence";
 import { ResearchError } from "./errors";
+import { assessDeploymentEnvironment } from "./deployment-config";
+
+export function localDatabaseUrl(filename: string): string {
+  // libSQL percent-decodes its URI path. Preserve spaces/#/? in real Windows
+  // workspace and temp paths rather than interpreting them as URL components.
+  return `file:${encodeURI(filename.replaceAll("\\", "/")).replaceAll("#", "%23").replaceAll("?", "%3F")}`;
+}
+
+export function databaseFetch(input: RequestInfo | URL, init?: RequestInit) {
+  // Bound remote reads/writes as well as research. libSQL accepts a custom
+  // Fetch implementation; preserve its request and any existing cancellation.
+  const inherited =
+    init?.signal || (input instanceof Request ? input.signal : undefined);
+  const deadline = AbortSignal.timeout(15_000);
+  return fetch(input, {
+    ...init,
+    signal: inherited ? AbortSignal.any([inherited, deadline]) : deadline,
+  });
+}
 
 export function createGuideStore(client: Client) {
   let initialized: Promise<void> | undefined;
@@ -79,41 +99,26 @@ export function createGuideStore(client: Client) {
 }
 
 export function databaseConfigured(): boolean {
-  return (
-    !process.env.VERCEL ||
-    Boolean(process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN)
-  );
+  return assessDeploymentEnvironment(process.env).persistenceConfigured;
 }
 
 let storePromise: Promise<ReturnType<typeof createGuideStore>> | undefined;
 export function getStore() {
   return (storePromise ??= (async () => {
     const remote = process.env.TURSO_DATABASE_URL;
-    if (process.env.VERCEL && (!remote || !process.env.TURSO_AUTH_TOKEN)) {
+    if (!databaseConfigured()) {
       throw new ResearchError(
         "DATABASE_NOT_CONFIGURED",
-        "Persistent research storage is not configured. Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN on Vercel.",
-        503,
-      );
-    }
-    if (
-      remote &&
-      !remote.startsWith("libsql://") &&
-      !remote.startsWith("https://")
-    ) {
-      throw new ResearchError(
-        "DATABASE_NOT_CONFIGURED",
-        "The server database URL must use libsql:// or https://.",
+        "Persistent research storage is not configured correctly. Use a public libsql:// or https:// database URL and its server auth token. Both are required on Vercel.",
         503,
       );
     }
     const localDirectory = resolve(process.cwd(), "data");
     if (!remote) await mkdir(localDirectory, { recursive: true });
     const client = createClient({
-      url:
-        remote ||
-        `file:${resolve(localDirectory, "authpilot.db").replaceAll("\\", "/")}`,
+      url: remote || localDatabaseUrl(resolve(localDirectory, "authpilot.db")),
       authToken: process.env.TURSO_AUTH_TOKEN,
+      ...(remote ? { fetch: databaseFetch } : {}),
     });
     return createGuideStore(client);
   })().catch((error) => {
@@ -128,7 +133,7 @@ export async function getGuides(): Promise<Guide[]> {
   const seedIds = new Set(seedGuides.map((guide) => guide.id));
   return [
     ...seedGuides,
-    ...persisted.filter((guide) => !seedIds.has(guide.id)),
+    ...persisted.filter((guide) => !seedIds.has(guide.id)).map(guideForReading),
   ];
 }
 
@@ -136,7 +141,8 @@ export async function getGuide(id: string): Promise<Guide | null> {
   const seed = seedGuides.find((guide) => guide.id === id);
   if (seed) return seed;
   if (!databaseConfigured()) return null;
-  return (await getStore()).getGuide(id);
+  const persisted = await (await getStore()).getGuide(id);
+  return persisted ? guideForReading(persisted) : null;
 }
 
 export async function saveGuide(guide: Guide): Promise<void> {

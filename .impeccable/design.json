@@ -791,7 +791,7 @@
   ],
   "narrative": {
     "northStar": "Evidence beside the next action",
-    "overview": "AuthPilot is a focused developer workspace built from deep charcoal, restrained violet, compact navigation, and readable documentation. The user-supplied **AuthPilot OAuth Integration Flow.png** is the visual authority: its four panels become connected Explore, Research, Guide, and Library screens. This approved reference replaces the previous identity. Its example provider policies, verification badges, countdown, and account controls are not product evidence.\n\nThe interface balances a compact operating view for finding providers and following research with an open reading view for source-linked requirements. Violet identifies actions and selected states; evidence has its own labelled semantic colors. Flat surfaces and alignment provide structure. Actual source styles and components are authoritative when an earlier screenshot differs from the final code.",
+    "overview": "AuthPilot is a focused developer workspace built from deep charcoal, restrained violet, compact navigation, and readable documentation. The user-supplied **AuthPilot OAuth Integration Flow.png** is the visual authority: its four panels become connected Explore, Research, Guide, and Library screens. This approved reference replaces the previous identity. Its example provider policies, verification badges, countdown, and account controls are not product evidence.\n\nThe interface balances a compact operating view for finding providers and following research with an open reading view for source-linked requirements. Violet identifies actions and selected states; evidence has its own labelled semantic colors. Flat surfaces and alignment provide structure. Actual source styles and components are authoritative when an earlier screenshot differs from the final code.\n\nThe evidence inspector keeps exact claims, conditions, source passages, AI interpretations, source links, retrieval dates, and verification status distinct. New research uses search, structured synthesis, bounded page retrieval, a separate AI support assessment, and deterministic passage matching. Provider-domain association is a heuristic rather than proof of official identity; legacy summaries are never presented as checked quotations. Older generated consequential claims without recorded support appear unknown at read time without overwriting their stored snapshots.\n\nNext-step guidance respects blocked tasks and unmet dependencies. Explicitly independent tasks may proceed, while older guides use checklist order conservatively. Recovery instructions and documentation links distinguish step-specific evidence from related section guidance. These checks do not execute provider setup or obtain approval.",
     "keyCharacteristics": [
       "Dark by default, with an equivalent working light theme.",
       "One top navigation and separate connected screens.",
@@ -817,7 +817,7 @@
       },
       {
         "name": "The Flat Workspace Rule.",
-        "body": "Keep resting content panels flat; reserve the shared ambient shadow for the mobile navigation dialog.",
+        "body": "Keep resting content panels flat; reserve ambient shadows for modal navigation and evidence inspection.",
         "section": "elevation"
       }
     ],

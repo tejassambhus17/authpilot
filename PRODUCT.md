@@ -17,7 +17,7 @@ Turn fragmented provider documentation into actionable OAuth integration guides 
 A live research agent supports unknown providers as well as curated GitHub, Slack, and Google guides. Every requirement carries its evidence status; agent capabilities and developer-only actions are explicit.
 
 ## Operating Context
-An APM Integrations take-home, scoped to a reliable 6–8-hour vertical slice. The existing working repository is being redesigned without replacing its research engine or stored guides. Users research providers, read guides, save browser-local bookmarks, track their own setup, export Markdown, and share persistent URLs.
+An APM Integrations take-home, scoped to a reliable 6–8-hour vertical slice. The existing working repository has the selected reference design and a final evidence/actionability engineering pass, preserving its real research flow and stored guides. Users research providers, read guides, save browser-local bookmarks, track their own setup, export Markdown, and share persistent URLs.
 
 ## Capabilities and Constraints
 Real web retrieval and LLM generation; strict Zod contracts; actual research events; persistent guides; local checklist progress; no fabricated setup attempts or timelines. Live research was verified with a locally configured server API key, which remains ignored by Git. Deployment credentials are not available.

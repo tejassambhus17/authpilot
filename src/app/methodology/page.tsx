@@ -44,7 +44,7 @@ export default function MethodologyPage() {
         </p>
         <div className="methodology-flow">
           <div>
-            <h3>Retrieve</h3>
+            <h3>Search documentation</h3>
             <p>
               The agent uses OpenAI’s hosted web-search tool to investigate
               current documentation. Research is required, rather than optional
@@ -52,24 +52,29 @@ export default function MethodologyPage() {
             </p>
           </div>
           <div>
-            <h3>Structure & validate</h3>
+            <h3>Structure the guide</h3>
             <p>
-              A second model call organizes the findings. Strict schemas and
-              source checks reject malformed output and citation URLs absent
-              from the search results.
+              A second model call organizes the findings, conditions, and setup
+              steps. Strict schemas reject malformed output; source checks
+              reject citation URLs absent from the search results.
             </p>
           </div>
           <div>
-            <h3>Save & act</h3>
+            <h3>Check support & save</h3>
             <p>
-              The validated guide is saved as an immutable snapshot. Share the
-              URL, export Markdown, and track your own progress in this browser.
+              The server retrieves a bounded set of cited pages. When readable
+              text is available, a third model call assesses claim support. A
+              deterministic check matches proposed passages to the retrieved
+              document. Claims without sufficient support remain unknown.
             </p>
           </div>
         </div>
         <p style={{ marginTop: 20 }}>
           The journal reports actual search-tool and application events. It does
-          not invent page visits, setup attempts, or completion percentages.
+          not invent page visits, setup attempts, or completion percentages. The
+          resulting guide is saved as an immutable snapshot with a shareable URL
+          and Markdown export. If pages or the separate assessment are
+          unavailable, the guide explains the uncertainty.
         </p>
       </section>
       <section className="article-section" id="evidence">
@@ -83,9 +88,11 @@ export default function MethodologyPage() {
             <EvidenceTag status="source-confirmed" />
             <p>
               A documented requirement linked to a source. Curated guides were
-              checked against official documentation. For generated guides,
-              citation provenance is checked mechanically; the model’s factual
-              interpretation and publisher identity still need human review.
+              checked against official documentation. For newly generated
+              claims, this label requires a matched supporting passage and a
+              separate AI support assessment. The model’s interpretation and
+              publisher identity still need human review; these checks are not
+              independent factual certification.
             </p>
           </div>
           <div className="evidence-definition">
@@ -115,10 +122,20 @@ export default function MethodologyPage() {
           </div>
         </div>
         <p style={{ marginTop: 20 }}>
-          Source retrieval dates record when documentation was researched. The
-          agent cannot guarantee that a page is exhaustive or unchanged.
-          Generated evidence excerpts are supporting summaries, not
-          independently verified quotations.
+          Open “Why this requirement?” beside a claim to inspect its exact text,
+          conditions, verification status, source links, and retrieval dates.
+          Source statements whose passages were matched are separate from AI
+          interpretations. Retained source summaries are not quotations. A
+          matched passage proves text was found, not that every interpretation
+          follows from it or that the page is exhaustive or unchanged.
+        </p>
+        <p>
+          Provider-domain association compares a documentation address with the
+          researched provider website and a small set of known documentation
+          domains. It is a heuristic, not proof of official identity. Older
+          generated approval, distribution, and timing claims without recorded
+          claim-level support are shown as unknown when read; the original
+          database snapshot is not overwritten.
         </p>
       </section>
       <section className="article-section">
@@ -175,6 +192,14 @@ export default function MethodologyPage() {
           not account-synced, shared with other readers, or included as personal
           completion claims in exported guides. Clearing browser storage clears
           your progress.
+        </p>
+        <p>
+          A blocked task is never presented as immediately actionable. The guide
+          shows recovery guidance and unmet dependencies; an independent task
+          can proceed only when its recorded prerequisites are complete. Older
+          guides without a dependency map use checklist order conservatively.
+          Documentation links distinguish step-specific evidence from related
+          section guidance.
         </p>
       </section>
       <section className="article-section" id="setup">

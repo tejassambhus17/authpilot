@@ -1,14 +1,10 @@
-import { databaseConfigured } from "@/lib/server/store";
+import { assessDeploymentEnvironment } from "@/lib/server/deployment-config";
 export const dynamic = "force-dynamic";
 export async function GET() {
-  const apiKeyConfigured = Boolean(process.env.OPENAI_API_KEY);
-  const persistenceConfigured = databaseConfigured();
+  const status = assessDeploymentEnvironment(process.env);
   return Response.json(
     {
-      apiKeyConfigured,
-      persistenceConfigured,
-      researchReady: apiKeyConfigured && persistenceConfigured,
-      accessTokenRequired: Boolean(process.env.RESEARCH_ACCESS_TOKEN),
+      ...status,
     },
     { headers: { "Cache-Control": "no-store" } },
   );

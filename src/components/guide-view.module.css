@@ -212,6 +212,90 @@
   margin-top: 8px;
   line-height: 1.6;
 }
+.stepRecovery {
+  margin: 10px 0 0 25px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--amber-bg);
+}
+.stepRecovery strong {
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--amber);
+}
+.stepRecovery p {
+  font-size: 13px;
+  line-height: 1.8;
+  margin-top: 5px;
+}
+.dependencyNote {
+  margin: 9px 0 0 25px;
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+.nextStepPanel.blockedPanel {
+  background: var(--surface);
+  border-color: color-mix(in srgb, var(--amber) 40%, var(--border));
+}
+.blockedPanel > h2 {
+  color: var(--amber);
+}
+.recoveryInstructions {
+  margin: 16px 0;
+}
+.recoveryInstructions h4 {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+.nextStepPanel .recoveryInstructions p {
+  margin: 0;
+}
+.nextStepPanel .navigationNote {
+  font-size: 11px;
+  line-height: 1.85;
+  margin: 12px 0;
+  color: var(--muted);
+}
+.dependencyDetails {
+  border-top: 1px solid var(--border);
+  padding-top: 13px;
+  margin: 15px 0;
+}
+.dependencyDetails summary {
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--foreground);
+  min-height: 30px;
+}
+.dependencyDetails ul {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+.dependencyDetails li {
+  font-size: 11px;
+  line-height: 1.8;
+  padding: 6px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 10px;
+  justify-content: space-between;
+}
+.dependencyDetails li > span {
+  color: var(--muted);
+}
+.dependencyDetails strong {
+  font-weight: 500;
+}
+.sourceBody > .sourceSummaryLabel {
+  font-size: 11px;
+  color: var(--brand);
+  margin-top: 12px;
+}
 .prerequisites {
   margin-top: 23px;
 }
@@ -399,6 +483,9 @@
 }
 .nextStepPanel > h2 svg {
   color: var(--brand);
+}
+.nextStepPanel.blockedPanel > h2 svg {
+  color: var(--amber);
 }
 .nextStepPanel > h3 {
   font-size: 14px;
