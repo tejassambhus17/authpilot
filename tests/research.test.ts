@@ -673,12 +673,17 @@ describe("installed OpenAI SDK wire compatibility", () => {
       ).toEqual({ claims: [] });
       expect(requests).toHaveLength(3);
       expect(requests[0]).toMatchObject({
+        max_output_tokens: 12000,
         tool_choice: "required",
         stream: true,
         store: false,
         tools: [{ type: "web_search" }],
         include: ["web_search_call.action.sources"],
       });
+      expect(String(requests[0].instructions)).toContain(
+        "compact evidence memo, not the final guide",
+      );
+      expect(String(requests[0].instructions)).toContain("under 1400 words");
       expect(requests[1]).toMatchObject({
         store: false,
         text: { format: { type: "json_schema", strict: true } },
