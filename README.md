@@ -10,7 +10,7 @@ Built as a focused working slice of the APM Integrations take-home. A provider O
 
 ## Run locally
 
-Use Node.js **22.12 or newer** (Node 24 recommended) and npm. The application and verification tools share this supported baseline.
+Use Node.js **24** and npm. The package engine pins the hosted runtime to the major version used by local verification. The launcher retains its 22.12+ compatibility check for older development environments.
 
 `npm run runtime` shows the Node version used by AuthPilot. The npm scripts select a supported runtime independently of an older Node used to start npm: `AUTHPILOT_NODE_BINARY` takes precedence, followed by the current supported Node, then an ignored project-local `.runtime/node.exe` on Windows (`.runtime/node` elsewhere). The launcher does not download software or change the system Node installation. Fresh checkouts should install Node 24 or explicitly select an existing supported executable.
 
