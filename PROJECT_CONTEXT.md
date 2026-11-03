@@ -27,3 +27,5 @@ No provider sign-in, credential collection, token exchange, review submission, b
 ## Reference files
 
 `PRODUCT.md` records product truth, `DESIGN.md` records the interface system, `src/lib/schema.ts` defines contracts, `docs/provider-validation.md` records provider evidence, and `docs/testing.md` records verification and manual checks.
+
+`docs/live-validation.md` records genuine unfamiliar-provider generation and an independent sampled claim audit. That audit caught a public-OAuth-distribution/Directory-listing conflation. Preserve this distinction in generation prompts and guide reviews; structural citation validation is separate from semantic verification.

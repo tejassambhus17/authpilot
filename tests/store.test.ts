@@ -12,12 +12,18 @@ import { guideToMarkdown } from "@/lib/server/markdown";
 const clients: Client[] = [];
 const directories: string[] = [];
 afterEach(async () => {
-  clients.splice(0).forEach(client => client.close());
-  for (const directory of directories.splice(0)) await rm(directory, {recursive: true, force: true, maxRetries: 3, retryDelay: 100});
+  clients.splice(0).forEach((client) => client.close());
+  for (const directory of directories.splice(0))
+    await rm(directory, {
+      recursive: true,
+      force: true,
+      maxRetries: 3,
+      retryDelay: 100,
+    });
 });
 
 function memoryStore() {
-  const client = createClient({url: "file::memory:"});
+  const client = createClient({ url: "file::memory:" });
   clients.push(client);
   return createGuideStore(client);
 }
@@ -60,7 +66,11 @@ const persistentProbe = String.raw`
 describe("guide persistence", () => {
   it("roundtrips a guide through SQLite, including source evidence", async () => {
     const store = memoryStore();
-    const guide = {...seedGuides[0], id: "research-roundtrip", origin: "researched" as const};
+    const guide = {
+      ...seedGuides[0],
+      id: "research-roundtrip",
+      origin: "researched" as const,
+    };
     await store.saveGuide(guide);
     expect(await store.getGuide(guide.id)).toEqual(guide);
     expect(await store.getGuides()).toEqual([guide]);
@@ -71,15 +81,26 @@ describe("guide persistence", () => {
     const directory = await mkdtemp(join(tmpdir(), "authpilot-store-"));
     directories.push(directory);
     const databaseUrl = `file:${join(directory, "test.db").replaceAll("\\", "/")}`;
-    const guide = {...seedGuides[0], id: "persistent-guide", origin: "researched" as const};
+    const guide = {
+      ...seedGuides[0],
+      id: "persistent-guide",
+      origin: "researched" as const,
+    };
     const probe = (action: "save" | "reopen") => {
       const result = spawnSync(process.execPath, ["-e", persistentProbe], {
-        cwd: process.cwd(), env: {...process.env, AUTHPILOT_TEST_DATABASE: databaseUrl},
-        input: JSON.stringify({action, guide}), encoding: "utf8", timeout: 15_000, windowsHide: true,
+        cwd: process.cwd(),
+        env: { ...process.env, AUTHPILOT_TEST_DATABASE: databaseUrl },
+        input: JSON.stringify({ action, guide }),
+        encoding: "utf8",
+        timeout: 15_000,
+        windowsHide: true,
       });
       if (result.error) throw result.error;
       expect(result.status, result.stderr).toBe(0);
-      return JSON.parse(result.stdout) as {guide: typeof guide; overwriteRejected: boolean};
+      return JSON.parse(result.stdout) as {
+        guide: typeof guide;
+        overwriteRejected: boolean;
+      };
     };
     expect(probe("save").guide).toEqual(guide);
     const reopened = probe("reopen");
@@ -89,7 +110,7 @@ describe("guide persistence", () => {
 
   it("rejects invalid evidence before writing", async () => {
     const store = memoryStore();
-    const guide = structuredClone({...seedGuides[0], id: "invalid"});
+    const guide = structuredClone({ ...seedGuides[0], id: "invalid" });
     guide.sections[0].claims[0].status = "source-confirmed";
     guide.sections[0].claims[0].sourceIds = ["missing-source"];
     await expect(store.saveGuide(guide)).rejects.toThrow("missing source");
@@ -98,11 +119,17 @@ describe("guide persistence", () => {
 
   it("atomically enforces a persistent rate limit and resets after expiry", async () => {
     const store = memoryStore();
-    const concurrent = await Promise.all(Array.from({length: 8}, () => store.consumeRateLimit("client", 5, 1000, 100)));
+    const concurrent = await Promise.all(
+      Array.from({ length: 8 }, () =>
+        store.consumeRateLimit("client", 5, 1000, 100),
+      ),
+    );
     expect(concurrent.filter(Boolean)).toHaveLength(5);
     expect(await store.consumeRateLimit("client", 5, 1000, 500)).toBe(false);
     expect(await store.consumeRateLimit("client", 5, 1000, 1100)).toBe(true);
-    expect(await store.consumeRateLimit("other-client", 5, 1000, 500)).toBe(true);
+    expect(await store.consumeRateLimit("other-client", 5, 1000, 500)).toBe(
+      true,
+    );
   });
 
   it("exports complete evidence and automation boundaries without shared checklist progress", () => {

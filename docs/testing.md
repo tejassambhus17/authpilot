@@ -32,7 +32,7 @@ Playwright starts or reuses the local app on `http://127.0.0.1:3100`, avoiding c
 
 ## Manual paid live verification
 
-This session has no configured OpenAI API key. The real paid unfamiliar-provider journey must be verified by the evaluator after configuring one:
+To verify unfamiliar-provider generation with your own server-side OpenAI API key, follow this sequence. Automated fixtures do not incur paid API calls:
 
 1. Start with the seeded guides and inspect the evidence panel.
 2. Enter an unfamiliar provider, such as a provider not present in the directory.
@@ -45,5 +45,10 @@ No OAuth provider setup, approval, sign-in, or credential exchange is represente
 
 ## Recorded results
 
-- 2026-11-03: Vitest 4.1.12 passed **45 tests across 4 files**, using Node.js 24.22.1. Coverage includes schema/evidence integrity, injected research transport failures and orchestration, request security, SQLite persistence across connections, immutable snapshots, and persistent rate budgets.
-- Paid OpenAI research and provider-console setup were not run; no API key or provider account was used.
+- 2026-11-03: Vitest 4.1.12 passed **77 tests across 4 files**, using Node.js 24.22.1. Coverage includes schema/evidence integrity, accidental credential rejection, injected research transport failures and orchestration, request security, SQLite persistence across connections, immutable snapshots, persistent rate budgets, automatic downgrading of explicit uncertainty, and model-specific reasoning options.
+- 2026-11-03: **All 8 Playwright browser tests passed** against the rebuilt production app using installed Edge. The real browser found a same-origin validation mismatch caused by Next.js's internal URL hostname; the guard was corrected, security cases added, and the actual missing-key submission passed in the final run.
+- Visual verification covered desktop library, guide, research, dark theme, and mobile library. Screenshots had no horizontal overflow at 1440 px or 390 px. Final metrics confirmed 15 px guide text with 26.25 px line height, a 75ch reading limit, visible panel focus outlines, and 44 px primary/menu targets.
+- The final mobile-close correction was checked separately against the frozen build: the targeted browser test passed, the close target measured 44 × 44 px, and close/reopen navigation worked. The same five screenshots were recaptured after QA cleanup, with an additional navigation screenshot; every image was opened and checked for valid content.
+- Production dependency audit reported **0 vulnerabilities**. The full development dependency audit has **16 moderate transitive minimatch findings**. The earlier critical test-runner dependency findings were removed by upgrading to Vitest 4.1.12.
+- An exact-match scan of 32 compiled client JavaScript/JSON files found no configured server API key. The key itself was not logged or included in review artifacts.
+- Three genuine, unmocked Linear requests verified the research-to-guide workflow and informed evidence-grounding improvements. The final GPT-5.5 request completed in 129 seconds, selected ten official sources, persisted after reload, and returned HTTP 200 for Markdown export. A fresh independent audit found no material error in three sampled lifecycle/approval claim groups. Earlier semantic errors are retained with errata in the validation record. See `live-validation.md` and `examples/linear-final.md`; this is not full-guide certification. Provider-console setup, sign-in, token exchange, and approval remain untested.

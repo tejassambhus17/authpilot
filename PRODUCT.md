@@ -20,7 +20,7 @@ A live research agent supports unknown providers as well as curated GitHub, Slac
 An APM Integrations take-home, scoped to a reliable 6–8-hour vertical slice. A new repository. Users read guides, track their own setup, export Markdown, and share persistent URLs.
 
 ## Capabilities and Constraints
-Real web retrieval and LLM generation; strict Zod contracts; actual research events; persistent guides; local checklist progress; no fabricated setup attempts or timelines. API credentials are not currently configured. Deployment credentials are not available.
+Real web retrieval and LLM generation; strict Zod contracts; actual research events; persistent guides; local checklist progress; no fabricated setup attempts or timelines. Live research was verified with a locally configured server API key, which remains ignored by Git. Deployment credentials are not available.
 
 ## Brand Commitments
 Premium developer SaaS at the craft level of Linear, Vercel, and Stripe. Distinctive AuthPilot identity. Spacious, accessible, responsive, light and dark. The user approved a searchable workspace, prominent research action, and evidence panel.

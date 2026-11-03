@@ -32,15 +32,18 @@ npm run dev
 
 Open [localhost:3000](http://localhost:3000). The three curated guides, directory search, local checklist tracking, themes, share links, and Markdown export work without an API key. Research explains missing configuration instead of returning a fake guide.
 
+If port 3000 is occupied, use `npm run dev -- --port 3100` and open the URL printed by Next.js. Automated browser tests use port 3100.
+
 ## Environment
 
 | Variable | Purpose |
 | --- | --- |
 | `OPENAI_API_KEY` | Server-only OpenAI key for real live research. Required only for generation. |
-| `OPENAI_MODEL` | Responses model supporting hosted web search and structured outputs. Defaults to `gpt-4.1`. |
+| `OPENAI_MODEL` | Responses model supporting hosted web search and structured outputs. Defaults to `gpt-5.5`; GPT-5 models use low reasoning effort for this bounded workflow. |
 | `TURSO_DATABASE_URL` | Remote libSQL database URL. Optional locally; required on Vercel for durable generated guides. |
 | `TURSO_AUTH_TOKEN` | Server-only token for the remote database. |
 | `RESEARCH_ACCESS_TOKEN` | Optional shared spending gate. When configured, users enter it in the research form. |
+| `NEXT_TELEMETRY_DISABLED` | Optional `1` disables Next.js telemetry and user-level telemetry configuration writes. |
 
 No variable holding credentials should be prefixed `NEXT_PUBLIC_`. Never paste OAuth client secrets into research input. `.env.local` and the local database are ignored by Git.
 
@@ -74,6 +77,8 @@ Directory / research form / guide reader
 
 Research rejects malformed output, invented source references, and claims of successful setup testing. Unknown or unsupported OAuth providers produce explicit uncertainty rather than invented registration instructions. The server handles unavailable configuration and upstream failures without returning API keys or raw internal errors.
 
+Before saving, an evidence guard downgrades source-confirmed claims that explicitly describe uncertainty to `unknown`, preserving their citations as context and recording a warning. This prevents an unresolved fact from carrying a confirmed badge; it does not replace semantic review of the linked documentation.
+
 ## Evidence and validation
 
 Read [the provider validation report](docs/provider-validation.md) for confirmed requirements, corrections to common stale guidance, source links, and unverified setup attempts. All three examples were investigated against official provider documentation. They were **not** registered, authorized, tested with tokens, or approved in a provider console.
@@ -93,7 +98,9 @@ npm run test:e2e
 
 `npm run check` runs the first four commands. Unit tests cover validation, evidence integrity, research failure handling, and persistence. The browser journey covers provider search, a usable guide, checklist status and reload persistence, Markdown export, theme changes, and an empty state. See [testing notes](docs/testing.md).
 
-No OpenAI API key was available in the build environment, so the paid live research journey must be checked with your own configured key. Automated transport fixtures test failures and orchestration without providing a production mock mode.
+**Verified:** 77 unit tests and all 8 browser journeys passed. A final genuine **Linear** run with GPT-5.5 selected **10 official sources**, persisted after reload, and exported Markdown. An independent bounded source audit confirmed the sampled lifecycle and approval distinctions. Earlier model errors and corrective work remain visible in [the live validation record](docs/live-validation.md), with an [unaltered final example](docs/examples/linear-final.md).
+
+You need your own server-side OpenAI key to use live research. Automated transport and HTTP fixtures test failures and orchestration without providing a production mock mode. No provider OAuth app was registered or approved during verification.
 
 ## Deploy to Vercel
 

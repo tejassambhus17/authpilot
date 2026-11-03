@@ -11,6 +11,7 @@ AuthPilot is a focused OAuth integration navigator, built for a 6–8-hour take-
 - Progress must describe observed lifecycle events. Do not animate invented research steps.
 - Do not claim provider setup was tested. This build researches public documentation; it does not sign in, register OAuth clients, exchange tokens, or obtain approval.
 - Cite requirements, label estimates, and leave missing or conflicting facts unknown. Validate references before saving.
+- Keep public OAuth distribution, optional directory listing, and workspace/admin approval separate. Call a listing or approval mandatory only when official evidence explicitly establishes that prerequisite for the intended use case. A retrieved URL alone does not prove a generated claim follows from it.
 - Guide URLs are public share links. Checklist status belongs to the current browser and does not alter another reader's progress.
 - Preserve accessible names, native keyboard behavior, dark/light tokens, reduced motion, and responsive layouts.
 

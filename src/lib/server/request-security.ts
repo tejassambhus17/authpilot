@@ -4,12 +4,33 @@ import { ResearchError } from "./errors";
 
 export function assertResearchAccess(request: Request): void {
   const origin = request.headers.get("origin");
-  if (origin && origin !== new URL(request.url).origin)
-    throw new ResearchError(
-      "INVALID_ORIGIN",
-      "Research requests must come from this application.",
-      403,
-    );
+  if (origin) {
+    let sameOrigin = false;
+    try {
+      const actualOrigin = new URL(origin);
+      const expected = new URL(request.url);
+      const host = request.headers.get("host");
+      // Next may expose an internal URL hostname. Host identifies the browser's
+      // actual request target; never trust an arbitrary forwarded-host value.
+      if (host) {
+        if (!/^(?:[a-z0-9.-]+|\[[a-f0-9:.]+\])(?::\d{1,5})?$/i.test(host))
+          throw new Error("Invalid request host");
+        expected.host = host;
+      }
+      sameOrigin =
+        ["http:", "https:"].includes(actualOrigin.protocol) &&
+        actualOrigin.origin === origin &&
+        actualOrigin.origin === expected.origin;
+    } catch {
+      /* Opaque, malformed, and non-HTTP origins are rejected. */
+    }
+    if (!sameOrigin)
+      throw new ResearchError(
+        "INVALID_ORIGIN",
+        "Research requests must come from this application.",
+        403,
+      );
+  }
   const token = process.env.RESEARCH_ACCESS_TOKEN;
   if (token) {
     const supplied = request.headers.get("x-research-token") || "";
