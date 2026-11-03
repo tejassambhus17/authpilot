@@ -1,5 +1,49 @@
 import { expect, test } from "@playwright/test";
 
+for (const accessTokenRequired of [false, true]) {
+  test(`research token control follows deployment configuration: ${accessTokenRequired}`, async ({
+    page,
+  }) => {
+    await page.route("**/api/health", (route) =>
+      route.fulfill({
+        json: {
+          apiKeyConfigured: true,
+          persistenceConfigured: true,
+          researchReady: true,
+          accessTokenRequired,
+        },
+      }),
+    );
+    let posted = false;
+    await page.route("**/api/research", async (route) => {
+      posted = true;
+      expect(route.request().headers()["x-research-token"]).toBe(
+        accessTokenRequired ? "fixture-access-value" : undefined,
+      );
+      await route.fulfill({
+        status: 400,
+        json: { error: "Fixture request complete; no paid research." },
+      });
+    });
+    await page.goto("/research?q=GitHub");
+    await expect(
+      page.getByText("Live research configured", { exact: true }),
+    ).toBeVisible();
+    const field = page.getByLabel("Research access token", { exact: true });
+    if (accessTokenRequired) await field.fill("fixture-access-value");
+    else await expect(field).toHaveCount(0);
+    await page
+      .getByRole("button", { name: "Research provider", exact: true })
+      .click();
+    await expect(
+      page
+        .getByRole("alert")
+        .filter({ hasText: "Research needs your attention" }),
+    ).toContainText("Fixture request complete");
+    expect(posted).toBe(true);
+  });
+}
+
 test("private-network provider input is rejected before any research POST", async ({
   page,
   request,

@@ -180,6 +180,8 @@ components:
 
 ## Overview
 
+The public interview demo hides the research access-token field when service readiness reports that no token is required. Private deployments retain the field, and a failed readiness check exposes it as a recovery option. Rate limits remain separate from this optional gate.
+
 **Creative North Star: "Evidence beside the next action"**
 
 AuthPilot is a focused developer workspace built from deep charcoal, restrained violet, compact navigation, and readable documentation. The user-supplied **AuthPilot OAuth Integration Flow.png** is the visual authority: its four panels become connected Explore, Research, Guide, and Library screens. This approved reference replaces the previous identity. Its example provider policies, verification badges, countdown, and account controls are not product evidence.

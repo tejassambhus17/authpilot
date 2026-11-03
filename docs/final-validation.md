@@ -56,7 +56,7 @@ A bounded independent Asana source audit corroborated two consequential groups: 
 
 ## Visual and interaction review
 
-The existing charcoal/violet design, tokens, themes, navigation, and six guide tabs were preserved. A targeted batch opened desktop/mobile legacy evidence inspectors and blocker panels at 1440×900 and 390×844. Two final screenshots opened the genuine Asana matched-passage inspector at the same desktop/mobile widths. All **six images** were opened and inspected. Metadata recorded no page/dialog horizontal overflow, no browser errors, and no research POSTs. Missing passages and related-documentation fallback were visibly explicit. The matched-source captures show source statements, AI support assessment, actual dates, and semantic-verification limits. See the final-pass section of [design QA](../design-qa.md) for the independent visual disposition.
+The existing charcoal/violet design, tokens, themes, navigation, and six guide tabs were preserved. A targeted batch opened desktop/mobile legacy evidence inspectors and blocker panels at 1440×900 and 390×844. Two final screenshots opened the genuine Asana matched-passage inspector at the same desktop/mobile widths. All **six images** were opened and inspected. Metadata recorded no page/dialog horizontal overflow, no browser errors, and no research POSTs. Missing passages and related-documentation fallback were visibly explicit. The matched-source captures show source statements, AI support assessment, actual dates, and semantic-verification limits. The independent visual review found no material regression; capture artifacts and internal review logs remain local and ignored.
 
 ## Not executed and remaining uncertainty
 

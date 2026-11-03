@@ -4,6 +4,10 @@ Dates in this report use Asia/Calcutta; retained event files use UTC. The owner 
 
 Public URL: [authpilot-navy.vercel.app](https://authpilot-navy.vercel.app).
 
+## Interview-demo access update
+
+The owner subsequently approved removing the research-token requirement for direct interviewer access. `RESEARCH_ACCESS_TOKEN` was removed from Vercel production and ignored local configuration; the optional gate remains available in application code for other deployments. OpenAI and database credentials stay server-only. Existing persistent limits remain **five requests per client/network per hour** and **thirty per deployment per hour**. The gate-required checks below describe the earlier deployment and are retained as historical verification.
+
 ## Infrastructure and credentials
 
 - Vercel project: `auth-pilot/authpilot`; final deployment `dpl_JBH6AscsuFvxNpWGHyAdLHVV7o83`, source commit `ccaf749`.

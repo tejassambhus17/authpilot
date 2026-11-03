@@ -1,5 +1,7 @@
 # Verification
 
+The public interview-demo update passed **282 unit tests**, **26 browser journeys**, TypeScript, lint and production build. Two additional browser cases verify token-free public research and the retained optional private-deployment gate. The complete reachable history and staged changes passed redacted Gitleaks scans; see [repository audit](repository-audit.md). Historical results below keep their original counts.
+
 The reliability and launch-planning follow-up passed **282 unit tests across 19 files**, the **18-case quality subset**, **24 browser journeys**, TypeScript, lint, and production build. The first unit/browser failures and corrections, paid Figma result, manual plan amendment, UI review, and unexecuted hosted checks are kept in [reliability validation](reliability-validation.md). Counts below remain historical.
 
 The subsequent desktop UI refinement passed **195 unit tests across 13 files**, **20 browser journeys**, TypeScript, lint, and production build. It added category-presentation behavior checks and inspected twelve desktop dark/light captures. No paid research calls were made for the visual-only backend-preserving pass. See [desktop polish](desktop-polish.md) for measurements and scope; the engineering results below retain their historical counts.

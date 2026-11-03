@@ -398,33 +398,35 @@ export function ResearchView() {
           shareable guide; do not include private project details.
         </p>
         <div className={styles.formFooter}>
-          <details
-            className={styles.accessDetails}
-            open={readiness?.accessTokenRequired || undefined}
-          >
-            <summary>
-              Deployment access token
-              {readiness?.accessTokenRequired
-                ? " (required)"
-                : " (if required)"}
-            </summary>
-            <label htmlFor="research-token" className="sr-only">
-              Research access token
-            </label>
-            <input
-              className={styles.tokenInput}
-              id="research-token"
-              type="password"
-              autoComplete="off"
-              placeholder="Token supplied by the deployment owner"
-              value={token}
-              onChange={(event) => setToken(event.target.value)}
-              disabled={running}
-            />
-            <p className={styles.fieldHelp}>
-              Used for this request only; never saved in your browser.
-            </p>
-          </details>
+          {(readiness?.accessTokenRequired || statusError) && (
+            <details
+              className={styles.accessDetails}
+              open={readiness?.accessTokenRequired || undefined}
+            >
+              <summary>
+                Deployment access token
+                {readiness?.accessTokenRequired
+                  ? " (required)"
+                  : " (if required)"}
+              </summary>
+              <label htmlFor="research-token" className="sr-only">
+                Research access token
+              </label>
+              <input
+                className={styles.tokenInput}
+                id="research-token"
+                type="password"
+                autoComplete="off"
+                placeholder="Token supplied by the deployment owner"
+                value={token}
+                onChange={(event) => setToken(event.target.value)}
+                disabled={running}
+              />
+              <p className={styles.fieldHelp}>
+                Used for this request only; never saved in your browser.
+              </p>
+            </details>
+          )}
           <div className={styles.readiness}>
             {readiness ? (
               <>

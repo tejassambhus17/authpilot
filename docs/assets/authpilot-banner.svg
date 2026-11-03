@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="260" viewBox="0 0 1280 260" role="img" aria-labelledby="title description">
+  <title id="title">AuthPilot</title>
+  <desc id="description">Clarity before you connect. The intelligent OAuth integration navigator.</desc>
+  <rect width="1280" height="260" rx="18" fill="#0b0d12"/>
+  <rect x=".5" y=".5" width="1279" height="259" rx="17.5" fill="none" stroke="#272b36"/>
+  <path d="m100 74 39 23v45l-39 23-39-23V97Z" fill="#7c3aed"/>
+  <path d="m100 94 20 9v18c0 13-20 24-20 24s-20-11-20-24v-18Z" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>
+  <path d="m91 119 7 7 13-15" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="172" y="130" fill="#f3f4f6" font-family="Segoe UI,Arial,sans-serif" font-size="64" font-weight="650" letter-spacing="-2">AuthPilot</text>
+  <text x="174" y="174" fill="#a8afbd" font-family="Segoe UI,Arial,sans-serif" font-size="24">Clarity before you connect.</text>
+  <path d="M798 80v100" stroke="#272b36"/>
+  <text x="848" y="113" fill="#f3f4f6" font-family="Segoe UI,Arial,sans-serif" font-size="22" font-weight="600">OAuth integration research</text>
+  <text x="848" y="151" fill="#a8afbd" font-family="Segoe UI,Arial,sans-serif" font-size="18">Official sources. Visible uncertainty.</text>
+  <text x="848" y="180" fill="#a78bfa" font-family="Segoe UI,Arial,sans-serif" font-size="18">A practical next step.</text>
+</svg>
