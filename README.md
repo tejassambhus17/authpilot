@@ -1,6 +1,6 @@
 # AuthPilot
 
-An OAuth integration navigator for developers and agent builders. Search GitHub, Slack, and Google guides, track setup steps, and research an unfamiliar provider using a real web-search agent. Guides expose requirements, effort estimates, approval blockers, source evidence, and the actions that need a human.
+An OAuth integration navigator for developers and agent builders. Explore GitHub, Slack, and Google guides, save useful guides, track setup steps, and research an unfamiliar provider using a real web-search agent. Guides expose requirements, effort estimates, approval blockers, source evidence, and the actions that need a human.
 
 Built as a focused working slice of the APM Integrations take-home. A provider OAuth app is the developer's client registration; it is separate from each end user's connection. AuthPilot helps with that registration and distribution path.
 
@@ -34,7 +34,7 @@ Add `OPENAI_API_KEY` for live research, then:
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000). The three curated guides, directory search, local checklist tracking, themes, share links, and Markdown export work without an API key. Research explains missing configuration instead of returning a fake guide.
+Open [localhost:3000](http://localhost:3000). The three curated guides, library search, browser-local Saved guides and checklist tracking, dark/light themes, share links, and Markdown export work without an API key. Research explains missing configuration instead of returning a fake guide.
 
 If port 3000 is occupied, use `npm run dev -- --port 3100` and open the URL printed by Next.js. Automated browser tests use port 3100.
 
@@ -53,18 +53,20 @@ No variable holding credentials should be prefixed `NEXT_PUBLIC_`. Never paste O
 
 ## Product decisions
 
+- **One connected workspace.** Explore (`/`) leads to a prefilled research form (`/research?q=...`), Guides (`/guides`) is the searchable library, Saved (`/saved`) shows this browser's bookmarks, and How it works (`/methodology`) explains the evidence model. Entering a provider on Explore does not start a paid request; research starts with the explicit research-form action.
+- **Reference-led, usable design.** The charcoal/violet interface defaults to dark mode and supports a persisted light theme, responsive navigation, accessible tabs, reduced motion, loading states, and recoverable errors. Guide tabs organize Overview, Setup steps, Scopes, Approval & review, Common issues, and Sources. Library counts and categories derive from real content.
 - **A usable guide beats a broad catalog.** Three initial providers demonstrate distinct problems: GitHub permissions and organization restrictions, Slack Marketplace distribution and review, and Google consent audiences and scope verification.
 - **Evidence is part of the interface.** Requirements show source-confirmed, estimate, or unknown status with clickable sources and retrieval dates. Agent-tested exists in the evidence vocabulary, but this build rejects that label because it never performs OAuth setup.
 - **Real research, honest progress.** An unfamiliar provider goes through real hosted web search, constrained synthesis, evidence checks, and durable save. Progress events follow observed API and orchestration events; there are no artificial activity timers.
 - **Human handoffs are explicit.** The agent can investigate and organize documentation. The developer signs in, decides scopes, configures redirects, protects credentials, tests their integration, and handles provider approval.
-- **Share content; keep progress personal.** Guide URLs are public and persistent. Checklists use the current browser's local storage, so opening a shared guide does not change another developer's setup state.
+- **Share content; keep progress personal.** Guide URLs are public and persistent. Saved bookmarks and the four checklist states use the current browser's local storage, so opening a shared guide does not change another developer's saved items or setup state. Saved is a personal convenience without an account or collaboration service.
 
 ## Architecture
 
 Next.js App Router, TypeScript, Tailwind CSS, accessible primitives, strict Zod contracts, OpenAI Responses, and libSQL.
 
 ```text
-Directory / research form / guide reader
+Explore / provider library / research form / guide reader
                │
        POST /api/research (NDJSON)
                │
@@ -77,7 +79,7 @@ Directory / research form / guide reader
      libSQL persistence → /guides/<id>
 ```
 
-`src/lib/schema.ts` owns shared contracts. `src/lib/server/` separates retrieval/orchestration and storage from the UI. `src/lib/seed-guides.ts` contains curated, source-checked examples. App Router handlers expose research and Markdown export. SQLite is used locally; Turso's HTTP-compatible libSQL path works on Vercel. Checklists remain local to the reader.
+`src/lib/schema.ts` owns shared contracts. `src/lib/server/` separates retrieval/orchestration and storage from the UI. `src/lib/seed-guides.ts` contains curated, source-checked examples. App Router handlers expose research and Markdown export. SQLite is used locally; Turso's HTTP-compatible libSQL path works on Vercel. Bookmarks and checklists remain local to the reader.
 
 Research rejects malformed output, invented source references, and claims of successful setup testing. Unknown or unsupported OAuth providers produce explicit uncertainty rather than invented registration instructions. The server handles unavailable configuration and upstream failures without returning API keys or raw internal errors.
 
@@ -100,9 +102,9 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-`npm run check` runs the first four commands. Unit tests cover validation, evidence integrity, research failure handling, and persistence. The browser journey covers provider search, a usable guide, checklist status and reload persistence, Markdown export, theme changes, and an empty state. See [testing notes](docs/testing.md).
+`npm run check` runs the first four commands. Unit tests cover validation, evidence integrity, research failure handling, and persistence. The browser suite covers library search and recovery, example guides, research routing, checklist reload persistence, save/unsave across navigation and reload, fresh-session sharing, Markdown export, themes, keyboard tabs, mobile navigation, retry, cancellation, and interrupted streams. See [testing notes](docs/testing.md) and [redesign validation](docs/redesign-validation.md).
 
-**Verified:** 80 unit tests and all 8 browser journeys passed. A final genuine **Linear** run with GPT-5.5 selected **10 official sources**, persisted after reload, and exported Markdown. An independent bounded source audit confirmed the sampled lifecycle and approval distinctions. Earlier model errors and corrective work remain visible in [the live validation record](docs/live-validation.md), with an [unaltered final example](docs/examples/linear-final.md).
+**Verified:** 85 unit tests and all 16 browser journeys passed, alongside TypeScript, lint, and a production build. A genuine **Linear** run with GPT-5.5 selected **10 official sources**, persisted after reload, and exported Markdown. On 3 November 2026, one genuine **Notion** run through the redesigned UI produced a persisted guide with **six official sources**; reload, Saved, sharing, fresh-session access, and Markdown HTTP 200 were checked without a second research request. Bounded independent audits corroborated the sampled lifecycle and approval distinctions, including optional Notion Marketplace listing versus public OAuth usage. Earlier model errors and corrective work remain visible in [the live validation record](docs/live-validation.md), with an [unaltered Linear example](docs/examples/linear-final.md); the [redesign report](docs/redesign-validation.md) records the Notion audit, real progress observations, and responsive screenshots. Generated validation guides are local research results, not additional preloaded examples in a fresh checkout.
 
 You need your own server-side OpenAI key to use live research. Automated transport and HTTP fixtures test failures and orchestration without providing a production mock mode. No provider OAuth app was registered or approved during verification.
 

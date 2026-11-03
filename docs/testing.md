@@ -24,26 +24,36 @@ Playwright starts or reuses the local app on `http://127.0.0.1:3100`, avoiding c
 - Source-confirmed claims require references; references cannot point to absent sources.
 - Fabricated agent-tested setup findings are rejected.
 - HTTP-safe source URLs and machine-readable retrieval dates.
-- Directory search, guide navigation, blocked/completed checklist persistence after reload, Markdown export, and light/dark switching.
-- Graceful provider-directory empty state and invalid research request handling.
-- Actual missing-API-key feedback and preserved provider input.
-- Test-only HTTP fixtures exercise research rate limits, retry, NDJSON event rendering, successful guide navigation, and truncated-stream rejection. These verify the UI consumer and do not claim a paid live research call or a provider OAuth setup succeeded.
+- Library search and recovery, all three example guides, four-state checklist reload persistence, Markdown export, share feedback, and persisted light/dark switching.
+- Explore-to-research navigation with a prefilled provider and no automatic paid request; invalid research input handling.
+- Browser-local save/unsave across library, Saved, guide view, navigation, and reload; public shared content with independent progress in a fresh browser session.
+- Mobile navigation, accessible keyboard tabs, and honest evidence labels without whole-guide setup verification.
+- Missing-API-key feedback and preserved provider input. An unconfigured server exercises its real response; a configured server uses a conditional test-only health/503 fixture so the test never changes or exposes credentials.
+- Test-only HTTP fixtures exercise research rate limits, retry, NDJSON event rendering, successful guide navigation, cancellation, and truncated-stream rejection. These verify the UI consumer and do not claim a paid live research call or a provider OAuth setup succeeded.
 - Backend research and persistence tests cover their own boundaries with injected test transports rather than a production demo flow.
 
 ## Manual paid live verification
 
 To verify unfamiliar-provider generation with your own server-side OpenAI API key, follow this sequence. Automated fixtures do not incur paid API calls:
 
-1. Start with the seeded guides and inspect the evidence panel.
-2. Enter an unfamiliar provider, such as a provider not present in the directory.
+1. Start with the seeded guides and inspect their Sources tab and evidence labels.
+2. Enter an unfamiliar provider on Explore, continue to the prefilled research screen, and explicitly start research.
 3. Confirm the live events originate from actual API/search lifecycle events.
 4. Open the resulting guide and inspect every source link, retrieval date, unsupported/unclear status, and unknown requirement.
-5. Reload its URL, then open it in a private window to verify persisted public reading and independent checklist state.
-6. Simulate a missing/invalid API key, provider API failure, and a canceled request. Check the error gives a recovery path without exposing upstream credentials.
+5. Reload its URL, save and reopen it from Saved, export Markdown, then open the share URL in a private window to verify persisted public content and independent checklist/bookmark state.
+6. Run the separate failure-fixture tests for missing configuration, rate limits, cancellation, and interruption. Check the error gives a recovery path without exposing upstream credentials.
 
 No OAuth provider setup, approval, sign-in, or credential exchange is represented as tested. Provider-source validation is documented separately in `provider-validation.md`.
 
 ## Recorded results
+
+- **Final reference redesign, 2026-11-03:** TypeScript, lint, **85 unit tests**, and the production build passed. All **16 Playwright tests passed** against installed Edge after the final icon and navigation-label changes. Browser transport fixtures stayed within the tests; no paid research was triggered by this suite.
+- One genuine **Notion** request through the redesigned UI produced persisted guide `notion-626d0e8d-c08` with six official citations. Its actual event stream showed 38 observed events and 35 returned search candidates before completion; candidates are not equivalent to final citations. Reload, Saved reopening, share feedback, fresh-session reading with independent progress, and Markdown HTTP 200 were verified without a second research request. An exact elapsed duration was not retained. Two independently sampled official-documentation groups were corroborated, without claiming complete guide certification or provider setup.
+- The final visual pass opened twelve matrix screenshots and two stored Notion screenshots. Seventeen route/theme/viewport checks at **1440×900**, **390×844**, and **768×1024** found zero horizontal overflow and zero browser page errors. Both official Notion icons decoded with natural dimensions 64×64. The final recapture issued zero research POSTs. The retained active-research screenshot is historical evidence from the genuine request before the icon hookup, not a recreated active state. See [redesign validation](redesign-validation.md) for the bounded source audit and artifact inventory.
+
+### Earlier verification before the reference redesign
+
+The following records describe the preceding implementation and runtime fixes. Their test counts are historical; the final redesign results above supersede them.
 
 - 2026-11-03 runtime regression: reproduced the real `ERR_REQUIRE_ESM` by loading `@tailwindcss/postcss` on the system Node 20.9.0; the same installed plugin loaded successfully on Node 24.22.1. Added a portable npm runtime launcher and an ignored local Node 24 executable for this machine. The launcher chooses an explicit shell override, the current supported runtime, or the local fallback; it does not change the system Node. `npm run runtime` now reports 24.22.1 when invoked from the original Node 20.9/npm 10 shell.
 - After the runtime correction, normal npm commands passed TypeScript, lint, **80 unit tests across 5 files**, and the production build. New regression cases load the real PostCSS plugin, check the runtime inherited by child tools, preserve arguments and failure exit codes, and reject an invalid runtime override with actionable instructions.

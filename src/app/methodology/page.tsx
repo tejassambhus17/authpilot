@@ -8,7 +8,7 @@ export default function MethodologyPage() {
     <article className="page-container methodology-page">
       <Link href="/" className="back-link">
         <ArrowLeft size={13} />
-        Provider library
+        Back to Explore
       </Link>
       <h1>
         Clarity you can trace

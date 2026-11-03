@@ -1,23 +1,27 @@
 "use client";
+
 import Link from "next/link";
 import {
   ArrowLeft,
   ArrowRight,
   ArrowUpRight,
   BookOpen,
-  Check,
-  CheckCheck,
+  ChevronDown,
   CircleAlert,
   ClipboardList,
   Clock3,
-  Copy,
   Download,
-  ExternalLink,
+  FileCheck2,
+  FlaskConical,
+  GitBranch,
+  ListChecks,
   LockKeyhole,
   RotateCcw,
+  Share2,
   ShieldCheck,
   Sparkles,
   UserRound,
+  Zap,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -25,15 +29,20 @@ import {
   type ChecklistStatus,
   type Claim,
   type Guide,
+  type SectionId,
 } from "@/lib/schema";
 import { ProviderIcon } from "./brand";
 import { EvidenceTag } from "./evidence";
+import { SaveGuideButton } from "./save-guide-button";
+import styles from "./guide-view.module.css";
 
 const tabs = [
-  { id: "guide", label: "Setup guide" },
-  { id: "checklist", label: "Your checklist" },
-  { id: "sources", label: "Sources & evidence" },
-  { id: "automation", label: "Agent boundaries" },
+  { id: "overview", label: "Overview" },
+  { id: "steps", label: "Setup steps" },
+  { id: "scopes", label: "Scopes" },
+  { id: "approval", label: "Approval & review" },
+  { id: "issues", label: "Common issues" },
+  { id: "sources", label: "Sources" },
 ] as const;
 type Tab = (typeof tabs)[number]["id"];
 const statuses: { value: ChecklistStatus; label: string }[] = [
@@ -42,6 +51,14 @@ const statuses: { value: ChecklistStatus; label: string }[] = [
   { value: "blocked", label: "Blocked" },
   { value: "completed", label: "Completed" },
 ];
+const setupSections: SectionId[] = [
+  "prerequisites",
+  "registration",
+  "redirects",
+  "credentials",
+  "testing",
+];
+
 function dateLabel(value: string) {
   return new Date(value).toLocaleDateString("en-GB", {
     day: "numeric",
@@ -53,7 +70,7 @@ function dateLabel(value: string) {
 
 function ClaimEvidence({ claim, guide }: { claim: Claim; guide: Guide }) {
   return (
-    <div className="claim-evidence">
+    <div className={styles.claimEvidence}>
       <EvidenceTag status={claim.status} />
       {claim.sourceIds.map((id) => {
         const source = guide.sources.find((s) => s.id === id);
@@ -67,21 +84,176 @@ function ClaimEvidence({ claim, guide }: { claim: Claim; guide: Guide }) {
             title={source.title}
           >
             {source.publisher}
-            <ArrowUpRight size={10} />
+            <ArrowUpRight size={11} />
           </a>
         ) : null;
       })}
     </div>
   );
 }
+
+function GuideSections({ guide, ids }: { guide: Guide; ids: SectionId[] }) {
+  return (
+    <div className={styles.reading}>
+      {ids.map((id) => {
+        const section = guide.sections.find((item) => item.id === id);
+        if (!section) return null;
+        return (
+          <section
+            className={styles.guideSection}
+            key={id}
+            id={`section-${id}`}
+          >
+            <h2>{section.title}</h2>
+            <p className={styles.sectionSummary}>{section.summary}</p>
+            <ul className={styles.claimList}>
+              {section.claims.map((claim, i) => (
+                <li key={i}>
+                  <p>{claim.text}</p>
+                  <ClaimEvidence claim={claim} guide={guide} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+type ChecklistProps = {
+  guide: Guide;
+  progress: Record<string, ChecklistStatus>;
+  ready: boolean;
+  compact?: boolean;
+  onChange: (id: string, status: ChecklistStatus) => void;
+  onRead: (sectionId: SectionId) => void;
+};
+
+function Checklist({
+  guide,
+  progress,
+  ready,
+  compact = false,
+  onChange,
+  onRead,
+}: ChecklistProps) {
+  const done = guide.checklist.filter(
+    (step) => progress[step.id] === "completed",
+  ).length;
+  return (
+    <section
+      className={`${styles.checklist} ${compact ? styles.compactChecklist : styles.expandedChecklist}`}
+      aria-label="Setup checklist"
+    >
+      <div className={styles.checklistHeading}>
+        <h2>
+          <ListChecks size={16} />
+          Setup checklist
+        </h2>
+        <span>
+          {done} / {guide.checklist.length} completed
+        </span>
+      </div>
+      <div
+        className={styles.progressTrack}
+        role="progressbar"
+        aria-label="Checklist completion"
+        aria-valuemin={0}
+        aria-valuemax={guide.checklist.length}
+        aria-valuenow={done}
+      >
+        <span
+          style={{ transform: `scaleX(${done / guide.checklist.length})` }}
+        />
+      </div>
+      <ol className={styles.checklistItems} aria-label="Checklist steps">
+        {guide.checklist.map((step) => {
+          const status = progress[step.id] || "not-started";
+          return (
+            <li className={styles.checklistItem} key={step.id}>
+              <label
+                className={`${styles.stepLabel} ${status === "completed" ? styles.completed : ""}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={status === "completed"}
+                  disabled={!ready}
+                  aria-label={`Mark ${step.title} complete`}
+                  onChange={(e) =>
+                    onChange(
+                      step.id,
+                      e.target.checked ? "completed" : "not-started",
+                    )
+                  }
+                />
+                <span>{step.title}</span>
+              </label>
+              {!compact && (
+                <p className={styles.stepDescription}>{step.description}</p>
+              )}
+              <div className={styles.stepControls}>
+                <select
+                  className={styles.statusSelect}
+                  disabled={!ready}
+                  aria-label={`Status for ${step.title}`}
+                  value={status}
+                  onChange={(e) =>
+                    onChange(step.id, e.target.value as ChecklistStatus)
+                  }
+                >
+                  {statuses.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+                <span className={styles.actor}>
+                  {step.actor === "developer" ? (
+                    <UserRound size={11} />
+                  ) : step.actor === "agent" ? (
+                    <Sparkles size={11} />
+                  ) : (
+                    <ShieldCheck size={11} />
+                  )}
+                  {step.actor === "developer"
+                    ? "Your action"
+                    : step.actor === "agent"
+                      ? "Agent can assist"
+                      : "Provider decision"}
+                </span>
+                {!compact && (
+                  <button
+                    className={styles.inlineAction}
+                    onClick={() => onRead(step.sectionId)}
+                  >
+                    Read guidance
+                    <ArrowUpRight size={12} />
+                  </button>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+      {compact && (
+        <p className={styles.personalNote}>
+          Progress is saved in this browser, just for you.
+        </p>
+      )}
+    </section>
+  );
+}
+
 export function GuideView({ guide }: { guide: Guide }) {
-  const [tab, setTab] = useState<Tab>("guide");
+  const [tab, setTab] = useState<Tab>("overview");
   const [progress, setProgress] = useState<Record<string, ChecklistStatus>>({});
   const [storageReady, setStorageReady] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [storageError, setStorageError] = useState("");
   const tabsRef = useRef<HTMLDivElement>(null);
   const storageKey = `authpilot:checklist:${guide.id}:v1`;
+
   useEffect(() => {
     const stored: Record<string, ChecklistStatus> = {};
     let error = "";
@@ -89,12 +261,16 @@ export function GuideView({ guide }: { guide: Guide }) {
       const raw = localStorage.getItem(storageKey);
       if (raw) {
         const value: unknown = JSON.parse(raw);
-        if (value && typeof value === "object")
+        if (value && typeof value === "object") {
           for (const [id, status] of Object.entries(value)) {
-            const result = checklistStatusSchema.safeParse(status);
-            if (result.success && guide.checklist.some((s) => s.id === id))
-              stored[id] = result.data;
+            const parsed = checklistStatusSchema.safeParse(status);
+            if (
+              parsed.success &&
+              guide.checklist.some((step) => step.id === id)
+            )
+              stored[id] = parsed.data;
           }
+        }
       }
     } catch {
       error =
@@ -107,6 +283,7 @@ export function GuideView({ guide }: { guide: Guide }) {
     });
     return () => cancelAnimationFrame(frame);
   }, [storageKey, guide.checklist]);
+
   function updateProgress(id: string, status: ChecklistStatus) {
     const next = { ...progress, [id]: status };
     setProgress(next);
@@ -118,6 +295,7 @@ export function GuideView({ guide }: { guide: Guide }) {
       );
     }
   }
+
   function resetProgress() {
     setProgress({});
     try {
@@ -129,13 +307,29 @@ export function GuideView({ guide }: { guide: Guide }) {
       );
     }
   }
-  const done = guide.checklist.filter(
-    (s) => progress[s.id] === "completed",
-  ).length;
-  const blocked = guide.checklist.filter(
-    (s) => progress[s.id] === "blocked",
-  ).length;
-  const nextStep = guide.checklist.find((s) => progress[s.id] !== "completed");
+
+  function selectTab(value: Tab, scroll = false) {
+    setTab(value);
+    if (scroll) tabsRef.current?.scrollIntoView({ block: "start" });
+  }
+
+  function readSection(sectionId: SectionId) {
+    const target: Tab =
+      sectionId === "scopes"
+        ? "scopes"
+        : sectionId === "review" || sectionId === "distribution"
+          ? "approval"
+          : sectionId === "troubleshooting"
+            ? "issues"
+            : "steps";
+    selectTab(target);
+    requestAnimationFrame(() =>
+      document
+        .getElementById(`section-${sectionId}`)
+        ?.scrollIntoView({ block: "start" }),
+    );
+  }
+
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(window.location.href.split("#")[0]);
@@ -144,115 +338,110 @@ export function GuideView({ guide }: { guide: Guide }) {
       setFeedback("Copy this guide’s address from your browser to share it.");
     }
   }
-  function selectTab(value: Tab, scroll = false) {
-    setTab(value);
-    if (scroll)
-      tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
+
+  const done = guide.checklist.filter(
+    (step) => progress[step.id] === "completed",
+  ).length;
+  const blocked = guide.checklist.filter(
+    (step) => progress[step.id] === "blocked",
+  ).length;
+  const nextStep = guide.checklist.find(
+    (step) => progress[step.id] !== "completed",
+  );
+  const nextSection = guide.sections.find(
+    (section) => section.id === nextStep?.sectionId,
+  );
+  const nextSource = nextSection?.claims
+    .flatMap((claim) => claim.sourceIds)
+    .map((id) => guide.sources.find((source) => source.id === id))
+    .find(Boolean);
+  const prerequisites = guide.sections.find(
+    (section) => section.id === "prerequisites",
+  );
+  const checklistProps = {
+    guide,
+    progress,
+    ready: storageReady,
+    onChange: updateProgress,
+    onRead: readSection,
+  };
 
   return (
-    <div className="page-container guide-page">
-      <Link href="/" className="back-link">
-        <ArrowLeft size={13} />
-        Provider library
-      </Link>
-      <div className="guide-heading">
-        <div className="guide-title-group">
-          <span className="provider-icon">
-            <ProviderIcon provider={guide.provider} size={34} />
-          </span>
-          <div>
-            <h1>{guide.provider}</h1>
-            <p className="guide-subtitle">OAuth integration guide</p>
-          </div>
-        </div>
-        <div className="guide-actions">
-          <button className="button" onClick={copyLink}>
-            <Copy size={14} />
-            Copy guide link
+    <div className={`page-container ${styles.page}`}>
+      <div className={styles.toolbar}>
+        <Link href="/guides" className={styles.backLink}>
+          <ArrowLeft size={15} />
+          Back to guides
+        </Link>
+        <div className={styles.actions}>
+          <button
+            className="button button-small"
+            aria-label="Copy guide link"
+            onClick={copyLink}
+          >
+            <Share2 size={14} />
+            Share
           </button>
+          <SaveGuideButton guideId={guide.id} />
           <a
-            className="button"
+            className="button button-small"
             href={`/api/guides/${guide.id}/export`}
             download
           >
             <Download size={14} />
             Export Markdown
           </a>
+          <Link
+            className="button button-primary button-small"
+            href={`/research?q=${encodeURIComponent(guide.provider)}`}
+          >
+            <RotateCcw size={14} />
+            Research again
+          </Link>
         </div>
       </div>
-      <p className="guide-description">{guide.description}</p>
-      <div className="guide-meta">
-        <span>
-          <BookOpen size={13} />
-          {guide.origin === "curated"
-            ? "Curated & source checked"
-            : "Researched by the agent"}
+
+      <header className={styles.header}>
+        <span className={`provider-icon ${styles.providerIcon}`}>
+          <ProviderIcon provider={guide.provider} size={35} />
         </span>
-        <span>
-          <ShieldCheck size={13} />
-          {guide.sources.length} documented sources
-        </span>
-        <span>Updated {dateLabel(guide.updatedAt)}</span>
-        <a
-          className="source-reference"
-          href={guide.website}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Provider website
-          <ExternalLink size={10} />
-        </a>
-      </div>
-      <div className="inline-feedback" role="status" aria-live="polite">
+        <div className={styles.headerCopy}>
+          <h1>{guide.provider} OAuth Integration Guide</h1>
+          <p>{guide.description}</p>
+          <div className={styles.metadata}>
+            <span className={styles.sourceBadge}>
+              <FileCheck2 size={12} />
+              {guide.origin === "curated"
+                ? "Curated guide"
+                : "Agent researched"}
+            </span>
+            <span>
+              <FlaskConical size={12} />
+              Setup not tested
+            </span>
+            <span>Updated {dateLabel(guide.updatedAt)}</span>
+            <button onClick={() => selectTab("sources", true)}>
+              <BookOpen size={12} />
+              {guide.sources.length} sources
+            </button>
+          </div>
+        </div>
+      </header>
+      <div className={styles.feedback} role="status" aria-live="polite">
         {feedback}
       </div>
-      <div className="guide-overview">
-        <div className="overview-cell">
-          <span>
-            <ClipboardList size={14} />
-            Setup complexity
-          </span>
-          <p>
-            <strong>{guide.difficulty}</strong>
-          </p>
-          <p style={{ fontSize: 10, marginTop: 5 }}>
-            OAuth{" "}
-            {guide.oauthSupport === "supported"
-              ? "supported"
-              : guide.oauthSupport === "unclear"
-                ? "support unclear"
-                : "not confirmed available"}
-          </p>
-        </div>
-        <div className="overview-cell">
-          <span>
-            <Clock3 size={14} />
-            Hands-on effort
-          </span>
-          <p>{guide.effort.text}</p>
-          <ClaimEvidence guide={guide} claim={guide.effort} />
-        </div>
-        <div className="overview-cell">
-          <span>
-            <ShieldCheck size={14} />
-            Approval & waiting
-          </span>
-          <p>{guide.approval.text}</p>
-          <ClaimEvidence guide={guide} claim={guide.approval} />
-        </div>
-      </div>
+
       <div
         ref={tabsRef}
-        className="guide-tabs"
+        className={styles.tabs}
         role="tablist"
         aria-label="Guide sections"
         onKeyDown={(e) => {
-          const index = tabs.findIndex((t) => t.id === tab);
-          const direction =
-            e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+          const index = tabs.findIndex((item) => item.id === tab);
           let next = index;
-          if (direction) next = (index + direction + tabs.length) % tabs.length;
+          if (e.key === "ArrowRight") next = (index + 1) % tabs.length;
+          else if (e.key === "ArrowLeft")
+            next = (index - 1 + tabs.length) % tabs.length;
           else if (e.key === "Home") next = 0;
           else if (e.key === "End") next = tabs.length - 1;
           else return;
@@ -272,229 +461,381 @@ export function GuideView({ guide }: { guide: Guide }) {
             onClick={() => selectTab(item.id)}
           >
             {item.label}
-            {item.id === "checklist" && (
-              <span>
-                {done}/{guide.checklist.length}
-              </span>
-            )}
           </button>
         ))}
       </div>
-      <div className="guide-body-grid">
-        <div className="guide-content">
-          <div
-            id={`panel-${tab}`}
-            role="tabpanel"
-            aria-labelledby={`tab-${tab}`}
-            className="tab-panel"
-            tabIndex={0}
-          >
-            {tab === "guide" && (
-              <>
-                {guide.oauthSupport !== "supported" && (
-                  <div className="notice">
-                    <CircleAlert size={18} />
-                    <div>
-                      <strong>
-                        {guide.oauthSupport === "unsupported"
-                          ? "OAuth integration is not established"
-                          : "OAuth support needs confirmation"}
-                      </strong>
-                      <p>
-                        Read the findings and unknowns before creating an
-                        integration. A generated guide is not proof that the
-                        provider supports your use case.
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {guide.blockers.length > 0 && (
-                  <div className="notice">
-                    <CircleAlert size={18} />
-                    <div>
-                      <strong>Before you build</strong>
-                      {guide.blockers.map((blocker, i) => (
-                        <div key={i}>
-                          <p>{blocker.text}</p>
-                          <ClaimEvidence guide={guide} claim={blocker} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {guide.sections.map((section, i) => (
-                  <section
-                    className="guide-section"
-                    key={section.id}
-                    id={`section-${section.id}`}
-                  >
-                    <div className="guide-section-header">
-                      <span className="section-index">
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-                      <h2>{section.title}</h2>
-                    </div>
-                    <p className="section-summary">{section.summary}</p>
-                    <ul className="claim-list">
-                      {section.claims.map((claim, j) => (
-                        <li className="claim-item" key={j}>
-                          {claim.text}
-                          <ClaimEvidence guide={guide} claim={claim} />
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                ))}
-                {guide.warnings.length > 0 && (
-                  <div className="notice neutral">
-                    <CircleAlert size={17} />
-                    <div>
-                      <strong>What remains uncertain</strong>
-                      {guide.warnings.map((warning, i) => (
-                        <p key={i}>{warning}</p>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-            {tab === "checklist" && (
-              <>
-                <div className="checklist-header">
-                  <div>
-                    <h2>Make the next step a small one.</h2>
-                    <p>
-                      Your checklist is saved in this browser. Shared guides
-                      start with a fresh checklist for each reader.
-                    </p>
-                  </div>
-                  <button
-                    className="button button-small"
-                    onClick={resetProgress}
-                    disabled={!Object.keys(progress).length}
-                  >
-                    <RotateCcw size={12} />
-                    Reset progress
-                  </button>
+
+      {storageError && (
+        <div className={`notice error ${styles.storageNotice}`} role="alert">
+          <CircleAlert size={17} />
+          <p>{storageError}</p>
+        </div>
+      )}
+      <div
+        id={`panel-${tab}`}
+        className={styles.tabPanel}
+        role="tabpanel"
+        aria-labelledby={`tab-${tab}`}
+        tabIndex={0}
+      >
+        {tab === "overview" && (
+          <>
+            {guide.oauthSupport !== "supported" && (
+              <div className="notice">
+                <CircleAlert size={18} />
+                <div>
+                  <strong>
+                    {guide.oauthSupport === "unsupported"
+                      ? "OAuth integration is not established"
+                      : "OAuth support needs confirmation"}
+                  </strong>
+                  <p>
+                    Read the findings and unknowns before creating an
+                    integration. A researched guide does not establish support
+                    for your use case.
+                  </p>
                 </div>
-                {storageError && (
-                  <div className="notice error" role="alert">
-                    <CircleAlert size={16} />
-                    <p>{storageError}</p>
-                  </div>
-                )}
-                <div className="checklist-items">
-                  {guide.checklist.map((step, i) => (
-                    <div className="checklist-item" key={step.id}>
-                      <span
-                        className={`step-check ${progress[step.id] || "not-started"}`}
-                      >
-                        {progress[step.id] === "completed" ? (
-                          <Check size={13} />
-                        ) : (
-                          String(i + 1).padStart(2, "0")
-                        )}
-                      </span>
-                      <div className="checklist-item-body">
-                        <h3>{step.title}</h3>
-                        <p>{step.description}</p>
-                        <div className="checklist-item-meta">
-                          <select
-                            className={`status-select ${progress[step.id] || "not-started"}`}
-                            disabled={!storageReady}
-                            aria-label={`Status for ${step.title}`}
-                            value={progress[step.id] || "not-started"}
-                            onChange={(e) =>
-                              updateProgress(
-                                step.id,
-                                e.target.value as ChecklistStatus,
-                              )
-                            }
-                          >
-                            {statuses.map((s) => (
-                              <option key={s.value} value={s.value}>
-                                {s.label}
-                              </option>
-                            ))}
-                          </select>
-                          <span>
-                            {step.actor === "developer" ? (
-                              <UserRound size={11} />
-                            ) : step.actor === "agent" ? (
-                              <Sparkles size={11} />
-                            ) : (
-                              <ShieldCheck size={11} />
-                            )}{" "}
-                            {step.actor === "developer"
-                              ? "Your action"
-                              : step.actor === "agent"
-                                ? "Agent can assist"
-                                : "Provider decision"}
-                          </span>
-                          <button
-                            className="source-reference"
-                            style={{
-                              border: 0,
-                              background: "none",
-                              padding: 0,
-                              cursor: "pointer",
-                            }}
-                            onClick={() => {
-                              selectTab("guide");
-                              requestAnimationFrame(() =>
-                                document
-                                  .getElementById(`section-${step.sectionId}`)
-                                  ?.scrollIntoView({ behavior: "smooth" }),
-                              );
-                            }}
-                          >
-                            Read guidance
-                            <ArrowUpRight size={10} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
+              </div>
             )}
-            {tab === "sources" && (
-              <>
-                <h2>Trace every requirement.</h2>
-                <p className="sources-intro">
-                  {guide.origin === "curated"
-                    ? "These official pages were checked while preparing this guide. Excerpts are short supporting quotations; the linked documentation is authoritative."
-                    : "These URLs were returned by the live web-search tool and matched against this guide’s citations. Evidence summaries are model interpretations, not independently verified quotations."}{" "}
-                  Retrieval dates describe documentation research. No account
-                  registration or OAuth exchange was attempted.
+            <div className={styles.overviewGrid}>
+              <section
+                className={styles.overviewContent}
+                aria-labelledby="overview-title"
+              >
+                <h2 id="overview-title">Overview</h2>
+                <p className={styles.overviewIntro}>
+                  Your path through {guide.provider} app registration, setup,
+                  and distribution. Check the conditions and linked evidence for
+                  your integration.
                 </p>
-                <div className="notice neutral">
-                  <ShieldCheck size={17} />
-                  <div>
-                    <strong>Source confirmed ≠ setup tested</strong>
-                    <p>
-                      Evidence supports a documented requirement. Your specific
-                      account, app configuration, or approval outcome has not
-                      been tested.
-                    </p>
-                  </div>
-                </div>
-                {guide.sources.map((source, i) => (
-                  <article
-                    className="source-item"
-                    key={source.id}
-                    id={`source-${source.id}`}
-                  >
-                    <h3>
-                      <span
-                        style={{
-                          color: "var(--muted)",
-                          fontSize: 10,
-                          marginRight: 7,
-                        }}
-                      >
-                        {String(i + 1).padStart(2, "0")}
+                <dl className={styles.facts}>
+                  <div className={styles.factRow}>
+                    <dt>
+                      <GitBranch size={16} />
+                      Integration
+                    </dt>
+                    <dd>
+                      OAuth app integration
+                      <span className={styles.factDetail}>
+                        {guide.oauthSupport === "supported"
+                          ? "OAuth support documented"
+                          : "OAuth support unconfirmed"}
                       </span>
+                    </dd>
+                  </div>
+                  <div className={styles.factRow}>
+                    <dt>
+                      <ClipboardList size={16} />
+                      Complexity
+                    </dt>
+                    <dd>
+                      {guide.difficulty}
+                      <span className={styles.factDetail}>
+                        Guide assessment
+                      </span>
+                    </dd>
+                  </div>
+                  <div className={styles.factRow}>
+                    <dt>
+                      <Clock3 size={16} />
+                      Hands-on effort
+                    </dt>
+                    <dd>
+                      <p>{guide.effort.text}</p>
+                      <ClaimEvidence claim={guide.effort} guide={guide} />
+                    </dd>
+                  </div>
+                  <div className={styles.factRow}>
+                    <dt>
+                      <ShieldCheck size={16} />
+                      Approval & wait
+                    </dt>
+                    <dd>
+                      <p>{guide.approval.text}</p>
+                      <ClaimEvidence claim={guide.approval} guide={guide} />
+                    </dd>
+                  </div>
+                  <div className={styles.factRow}>
+                    <dt>
+                      <BookOpen size={16} />
+                      Documentation
+                    </dt>
+                    <dd>
+                      <a
+                        href={guide.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {new URL(guide.website).hostname}
+                        <ArrowUpRight size={13} />
+                      </a>
+                    </dd>
+                  </div>
+                </dl>
+                {prerequisites && (
+                  <section className={styles.prerequisites}>
+                    <h3>Before you start</h3>
+                    <p>{prerequisites.summary}</p>
+                    <button
+                      className={styles.inlineAction}
+                      onClick={() => readSection("prerequisites")}
+                    >
+                      Read prerequisites
+                      <ArrowRight size={13} />
+                    </button>
+                  </section>
+                )}
+              </section>
+              <div>
+                <Checklist {...checklistProps} compact />
+                <button
+                  className={styles.allStepsButton}
+                  onClick={() => selectTab("steps", true)}
+                >
+                  View all setup steps
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+              <aside className={styles.nextRail} aria-label="Your next step">
+                <section className={styles.nextStepPanel}>
+                  <h2>
+                    <Zap size={16} />
+                    Your next step
+                  </h2>
+                  <h3>
+                    {nextStep?.title || "Review your completed integration"}
+                  </h3>
+                  <p>
+                    {nextStep?.description ||
+                      "Your checklist is complete. Review your real integration and the current provider requirements before launch."}
+                  </p>
+                  <a
+                    className="button button-primary"
+                    href={nextSource?.url || guide.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Open {guide.provider} docs
+                    <ArrowUpRight size={14} />
+                  </a>
+                  {nextStep && (
+                    <button
+                      className={styles.inlineAction}
+                      onClick={() => readSection(nextStep.sectionId)}
+                    >
+                      Read this step’s guidance
+                      <ArrowRight size={12} />
+                    </button>
+                  )}
+                </section>
+                <section className={styles.reviewPanel}>
+                  <h2>
+                    <ShieldCheck size={16} />
+                    Approval & review
+                  </h2>
+                  <p>
+                    Registration, administrator approval, and distribution can
+                    be different steps. Read the requirements for your app’s
+                    scope and audience.
+                  </p>
+                  <button
+                    className={styles.inlineAction}
+                    onClick={() => selectTab("approval", true)}
+                  >
+                    View review requirements
+                    <ArrowRight size={13} />
+                  </button>
+                </section>
+                <div className={styles.researchBoundary}>
+                  <FlaskConical size={15} />
+                  <p>
+                    Documentation researched.
+                    <br />
+                    Account setup not attempted.
+                  </p>
+                </div>
+              </aside>
+            </div>
+
+            {guide.blockers.length > 0 && (
+              <section className={styles.conditions}>
+                <h2>
+                  <CircleAlert size={18} />
+                  Conditions & blockers
+                </h2>
+                <p className={styles.sectionSummary}>
+                  These can change the path to launch. Review them before you
+                  commit to your integration’s scope.
+                </p>
+                <ul className={styles.claimList}>
+                  {guide.blockers.map((claim, i) => (
+                    <li key={i}>
+                      <p>{claim.text}</p>
+                      <ClaimEvidence claim={claim} guide={guide} />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+            <details className={styles.disclosure}>
+              <summary>
+                <span>
+                  <Sparkles size={17} />
+                  Agent & developer handoffs
+                </span>
+                <ChevronDown size={16} />
+              </summary>
+              <p className={styles.handoffIntro}>
+                The agent investigated public documentation. You sign in, choose
+                permissions, configure secrets, and execute tests. Provider and
+                workspace approvals stay with their decision-makers.
+              </p>
+              <div className={styles.handoffGrid}>
+                <section>
+                  <h3>
+                    <Sparkles size={16} />
+                    The agent can help with
+                  </h3>
+                  <ul>
+                    {guide.automation.canDo.map((item, i) => (
+                      <li key={i}>{item}</li>
+                    ))}
+                  </ul>
+                </section>
+                <section>
+                  <h3>
+                    <UserRound size={16} />
+                    You take over for
+                  </h3>
+                  <ul>
+                    {guide.automation.requiresHuman.map((item, i) => (
+                      <li key={i}>{item}</li>
+                    ))}
+                  </ul>
+                </section>
+                <section>
+                  <h3>
+                    <LockKeyhole size={16} />
+                    The agent never does
+                  </h3>
+                  <ul>
+                    {guide.automation.neverDoes.map((item, i) => (
+                      <li key={i}>{item}</li>
+                    ))}
+                  </ul>
+                </section>
+              </div>
+            </details>
+            {guide.warnings.length > 0 && (
+              <details className={styles.disclosure}>
+                <summary>
+                  <span>
+                    <CircleAlert size={17} />
+                    Known uncertainties & limitations ({guide.warnings.length})
+                  </span>
+                  <ChevronDown size={16} />
+                </summary>
+                <ul className={styles.warningList}>
+                  {guide.warnings.map((warning, i) => (
+                    <li key={i}>{warning}</li>
+                  ))}
+                </ul>
+              </details>
+            )}
+          </>
+        )}
+
+        {tab === "steps" && (
+          <div className={styles.detailGrid}>
+            <div>
+              <div className={styles.sectionHeading}>
+                <div>
+                  <h2>Setup steps</h2>
+                  <p>
+                    Follow the plan, track your progress, and use the evidence
+                    to verify each requirement.
+                  </p>
+                </div>
+                <button
+                  className="button button-small"
+                  onClick={resetProgress}
+                  disabled={!Object.keys(progress).length}
+                >
+                  <RotateCcw size={13} />
+                  Reset progress
+                </button>
+              </div>
+              <Checklist {...checklistProps} />
+              <GuideSections guide={guide} ids={setupSections} />
+            </div>
+            <aside className={styles.sideNote}>
+              <h3>
+                <UserRound size={16} />
+                Your actions, your credentials.
+              </h3>
+              <p>
+                Signing in, registering the app, choosing scopes, and executing
+                OAuth tests are developer actions. AuthPilot has not performed
+                these steps.
+              </p>
+              <p>
+                {done} of {guide.checklist.length} checklist steps marked
+                complete in this browser.
+                {blocked
+                  ? ` ${blocked} ${blocked === 1 ? "step is" : "steps are"} blocked.`
+                  : ""}
+              </p>
+              <button
+                className={styles.inlineAction}
+                onClick={() => selectTab("sources")}
+              >
+                Inspect supporting sources
+                <ArrowRight size={13} />
+              </button>
+            </aside>
+          </div>
+        )}
+        {tab === "scopes" && <GuideSections guide={guide} ids={["scopes"]} />}
+        {tab === "approval" && (
+          <GuideSections guide={guide} ids={["review", "distribution"]} />
+        )}
+        {tab === "issues" && (
+          <GuideSections guide={guide} ids={["troubleshooting"]} />
+        )}
+        {tab === "sources" && (
+          <section className={styles.sources}>
+            <div className={styles.sourcesHeading}>
+              <h2>Trace every requirement.</h2>
+              <span>{guide.sources.length} sources</span>
+            </div>
+            <p className={styles.sourcesIntro}>
+              {guide.origin === "curated"
+                ? "These official pages were checked while preparing this guide. Excerpts are short supporting quotations; the linked documentation is authoritative."
+                : "These URLs were returned by the live web-search tool and matched against the guide’s citations. Evidence summaries are model interpretations, not independently verified quotations."}{" "}
+              Retrieval dates describe documentation research, not a completed
+              OAuth setup.
+            </p>
+            <div className={styles.evidenceNotice}>
+              <ShieldCheck size={18} />
+              <p>
+                <strong>Source confirmed does not mean setup tested.</strong> A
+                citation supports a documented requirement. Your account,
+                configuration, or approval outcome has not been tested by
+                AuthPilot.
+              </p>
+            </div>
+            <div className={styles.sourcesList}>
+              {guide.sources.map((source) => (
+                <article
+                  className={styles.sourceItem}
+                  id={`source-${source.id}`}
+                  key={source.id}
+                >
+                  <span className={styles.sourceIcon}>
+                    <BookOpen size={20} />
+                  </span>
+                  <div className={styles.sourceBody}>
+                    <h3>
                       <a
                         href={source.url}
                         target="_blank"
@@ -505,7 +846,7 @@ export function GuideView({ guide }: { guide: Guide }) {
                       </a>
                     </h3>
                     <a
-                      className="source-url"
+                      className={styles.sourceUrl}
                       href={source.url}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -513,145 +854,25 @@ export function GuideView({ guide }: { guide: Guide }) {
                       {source.url}
                     </a>
                     <p>{source.excerpt}</p>
-                    <div className="source-date">
+                    <div className={styles.sourceMeta}>
                       <span>{source.publisher}</span>
                       <span>Retrieved {dateLabel(source.retrievedAt)}</span>
-                      <span>
-                        {guide.origin === "curated"
-                          ? "Official documentation"
-                          : "Search-returned source"}
-                      </span>
                     </div>
-                  </article>
-                ))}
-                <p className="sources-intro">
-                  <Link
-                    href="/methodology#evidence"
-                    className="source-reference"
-                  >
-                    Read the evidence methodology
-                    <ArrowUpRight size={11} />
-                  </Link>
-                </p>
-              </>
-            )}
-            {tab === "automation" && (
-              <>
-                <h2>A useful agent. Clear handoffs.</h2>
-                <p className="sources-intro">
-                  AuthPilot researches public documentation and prepares your
-                  plan. It does not access your provider accounts or execute
-                  OAuth setup. These boundaries apply to every checklist item.
-                </p>
-                <section className="boundary-section">
-                  <h3>
-                    <Sparkles size={18} />
-                    The agent can help with
-                  </h3>
-                  <ul>
-                    {guide.automation.canDo.map((item, i) => (
-                      <li key={i}>{item}</li>
-                    ))}
-                  </ul>
-                </section>
-                <section className="boundary-section">
-                  <h3>
-                    <UserRound size={18} />
-                    You take over for
-                  </h3>
-                  <ul>
-                    {guide.automation.requiresHuman.map((item, i) => (
-                      <li key={i}>{item}</li>
-                    ))}
-                  </ul>
-                </section>
-                <section className="boundary-section">
-                  <h3>
-                    <LockKeyhole size={18} />
-                    The agent never does
-                  </h3>
-                  <ul>
-                    {guide.automation.neverDoes.map((item, i) => (
-                      <li key={i}>{item}</li>
-                    ))}
-                  </ul>
-                </section>
-              </>
-            )}
-          </div>
-        </div>
-        <aside className="guide-rail" aria-label="Your guide progress">
-          <div className="rail-sticky">
-            <div className="progress-panel">
-              <h3>
-                <ClipboardList size={15} />
-                Your integration
-              </h3>
-              <div className="progress-count">
-                <strong>
-                  {done}
-                  <small> / {guide.checklist.length}</small>
-                </strong>
-                <span>steps complete</span>
-              </div>
-              <div
-                className="progress-track"
-                role="progressbar"
-                aria-label="Checklist completion"
-                aria-valuemin={0}
-                aria-valuemax={guide.checklist.length}
-                aria-valuenow={done}
-              >
-                <span
-                  style={{
-                    transform: `scaleX(${done / guide.checklist.length})`,
-                  }}
-                />
-              </div>
-              <p>
-                {blocked
-                  ? `${blocked} step${blocked === 1 ? " is" : "s are"} blocked. Review the related guidance.`
-                  : "Progress saved in this browser, just for you."}
-              </p>
-              <div className="next-step">
-                <span>{nextStep ? "UP NEXT" : "READY FOR YOUR REVIEW"}</span>
-                {nextStep?.title || "All checklist steps completed."}
-              </div>
-              <button
-                className="button"
-                onClick={() => selectTab("checklist", true)}
-              >
-                {done === guide.checklist.length ? (
-                  <CheckCheck size={13} />
-                ) : (
-                  <ArrowRight size={13} />
-                )}
-                Open your checklist
-              </button>
+                  </div>
+                  <span className={styles.sourceKind}>
+                    {guide.origin === "curated"
+                      ? "Official docs"
+                      : "Retrieved source"}
+                  </span>
+                </article>
+              ))}
             </div>
-            {tab === "guide" && (
-              <nav className="rail-nav" aria-label="On this page">
-                <strong>IN THIS GUIDE</strong>
-                {guide.sections.map((s) => (
-                  <a key={s.id} href={`#section-${s.id}`}>
-                    {s.title}
-                  </a>
-                ))}
-              </nav>
-            )}
-            <div className="rail-research-note">
-              <ShieldCheck size={13} />
-              Documentation researched.
-              <br />
-              Account setup not tested.
-              <br />
-              <Link href="/methodology" className="source-reference">
-                Understand the evidence
-                <ArrowUpRight size={10} />
-              </Link>
-            </div>
-          </div>
-        </aside>
+            <Link className={styles.inlineAction} href="/methodology#evidence">
+              Read the evidence methodology
+              <ArrowUpRight size={13} />
+            </Link>
+          </section>
+        )}
       </div>
     </div>
   );

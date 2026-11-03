@@ -17,13 +17,13 @@ Turn fragmented provider documentation into actionable OAuth integration guides 
 A live research agent supports unknown providers as well as curated GitHub, Slack, and Google guides. Every requirement carries its evidence status; agent capabilities and developer-only actions are explicit.
 
 ## Operating Context
-An APM Integrations take-home, scoped to a reliable 6–8-hour vertical slice. A new repository. Users read guides, track their own setup, export Markdown, and share persistent URLs.
+An APM Integrations take-home, scoped to a reliable 6–8-hour vertical slice. The existing working repository is being redesigned without replacing its research engine or stored guides. Users research providers, read guides, save browser-local bookmarks, track their own setup, export Markdown, and share persistent URLs.
 
 ## Capabilities and Constraints
 Real web retrieval and LLM generation; strict Zod contracts; actual research events; persistent guides; local checklist progress; no fabricated setup attempts or timelines. Live research was verified with a locally configured server API key, which remains ignored by Git. Deployment credentials are not available.
 
 ## Brand Commitments
-Premium developer SaaS at the craft level of Linear, Vercel, and Stripe. Distinctive AuthPilot identity. Spacious, accessible, responsive, light and dark. The user approved a searchable workspace, prominent research action, and evidence panel.
+The user selected the attached four-screen AuthPilot OAuth Integration Flow reference: deep charcoal surfaces, restrained violet actions, compact top navigation, focused Explore input, actual-event research timeline and evidence panel, six-tab guide, and a separate library. Implement the screens as connected routes, not a collage. Preserve accessible light/dark themes, with dark as the new default. The reference is visual authority, never evidence for provider requirements or verification claims. Do not add account or shared-with-me controls without real supporting features.
 
 ## Product Principles
 - Evidence before confidence.

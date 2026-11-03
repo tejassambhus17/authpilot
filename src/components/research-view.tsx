@@ -1,4 +1,5 @@
 "use client";
+
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -6,11 +7,14 @@ import {
   ArrowRight,
   ArrowUpRight,
   Check,
+  Circle,
   CircleAlert,
-  Compass,
   ExternalLink,
   FileCheck2,
+  FileSearch,
+  FileText,
   Globe2,
+  Link2,
   LoaderCircle,
   LockKeyhole,
   Search,
@@ -18,7 +22,18 @@ import {
   Square,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { researchInputSchema, type ResearchEvent } from "@/lib/schema";
+import {
+  researchInputSchema,
+  type ResearchEvent,
+  type ResearchPhase,
+} from "@/lib/schema";
+import {
+  getDiscoveredSources,
+  getResearchProgress,
+  publicEvidenceUrl,
+} from "@/lib/research-progress";
+import { ProviderIcon } from "./brand";
+import styles from "./research-view.module.css";
 
 type Readiness = {
   apiKeyConfigured: boolean;
@@ -26,22 +41,86 @@ type Readiness = {
   researchReady: boolean;
   accessTokenRequired: boolean;
 };
+
+const phases = new Set<ResearchPhase>([
+  "accepted",
+  "searching",
+  "source-found",
+  "synthesizing",
+  "validating",
+  "saving",
+  "complete",
+  "error",
+]);
+const phaseLabels: Record<ResearchPhase, string> = {
+  accepted: "Request accepted",
+  searching: "Finding documentation",
+  "source-found": "Documentation returned",
+  synthesizing: "Building your guide",
+  validating: "Checking the evidence",
+  saving: "Saving your guide",
+  complete: "Guide saved",
+  error: "Research stopped",
+};
+const stateLabels = {
+  pending: "Pending",
+  active: "In progress",
+  completed: "Completed",
+  failed: "Interrupted",
+};
+
+function parseEvent(line: string): ResearchEvent {
+  let value: unknown;
+  try {
+    value = JSON.parse(line);
+  } catch {
+    throw new Error(
+      "The research stream returned an unreadable event. Please retry.",
+    );
+  }
+  if (!value || typeof value !== "object")
+    throw new Error(
+      "The research stream returned an unreadable event. Please retry.",
+    );
+  const event = value as Partial<ResearchEvent>;
+  if (
+    !event.phase ||
+    !phases.has(event.phase) ||
+    typeof event.message !== "string" ||
+    !event.message ||
+    typeof event.timestamp !== "string" ||
+    !Number.isFinite(Date.parse(event.timestamp))
+  ) {
+    throw new Error(
+      "The research stream returned an unreadable event. Please retry.",
+    );
+  }
+  if (event.guideId !== undefined && typeof event.guideId !== "string")
+    throw new Error(
+      "The research stream returned an unreadable guide link. Please retry.",
+    );
+  return event as ResearchEvent;
+}
+
 export function ResearchView() {
   const params = useSearchParams();
   const [query, setQuery] = useState(params.get("q") || "");
+  const [activeQuery, setActiveQuery] = useState("");
   const [token, setToken] = useState("");
   const [events, setEvents] = useState<ResearchEvent[]>([]);
   const [running, setRunning] = useState(false);
+  const [attempted, setAttempted] = useState(false);
   const [error, setError] = useState("");
   const [guideId, setGuideId] = useState("");
   const [readiness, setReadiness] = useState<Readiness | null>(null);
   const [statusError, setStatusError] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     const controller = new AbortController();
     fetch("/api/health", { signal: controller.signal })
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((response) => (response.ok ? response.json() : Promise.reject()))
       .then(setReadiness)
       .catch(() => {
         if (!controller.signal.aborted) setStatusError(true);
@@ -51,8 +130,9 @@ export function ResearchView() {
       abortRef.current?.abort();
     };
   }, []);
-  async function research(e: React.FormEvent) {
-    e.preventDefault();
+
+  async function research(event: React.FormEvent) {
+    event.preventDefault();
     const parsed = researchInputSchema.safeParse({ query });
     if (!parsed.success) {
       setError(
@@ -64,6 +144,8 @@ export function ResearchView() {
     setError("");
     setGuideId("");
     setEvents([]);
+    setActiveQuery(parsed.data.query);
+    setAttempted(true);
     setRunning(true);
     const controller = new AbortController();
     abortRef.current = controller;
@@ -97,16 +179,13 @@ export function ResearchView() {
       let buffer = "";
       function consume(line: string) {
         if (!line.trim()) return;
-        const event = JSON.parse(line) as ResearchEvent;
-        if (!event.phase || !event.message || !event.timestamp)
-          throw new Error(
-            "The research stream returned an unreadable event. Please retry.",
-          );
-        setEvents((prev) => [...prev, event]);
-        if (event.phase === "error") throw new Error(event.message);
-        if (event.phase === "complete" && event.guideId) {
+        const researchEvent = parseEvent(line);
+        setEvents((previous) => [...previous, researchEvent]);
+        if (researchEvent.phase === "error")
+          throw new Error(researchEvent.message);
+        if (researchEvent.phase === "complete" && researchEvent.guideId) {
           receivedComplete = true;
-          setGuideId(event.guideId);
+          setGuideId(researchEvent.guideId);
         }
       }
       while (true) {
@@ -125,51 +204,105 @@ export function ResearchView() {
         throw new Error(
           "The connection ended before the guide was saved. Please retry your research.",
         );
-    } catch (err) {
+    } catch (failure) {
       if (controller.signal.aborted)
         setError(
           "Research cancelled. No completed guide was received. You can start again when you’re ready.",
         );
       else
         setError(
-          err instanceof Error
-            ? err.message
+          failure instanceof Error
+            ? failure.message
             : "Research failed. Please try again.",
         );
     } finally {
+      // Stop a partial stream after parsing errors as well as explicit cancellation.
+      controller.abort();
       setRunning(false);
       abortRef.current = null;
     }
   }
+
+  const displayQuery =
+    activeQuery ||
+    (researchInputSchema.safeParse({ query }).success ? query.trim() : "");
+  const latest = events.at(-1);
+  const sources = getDiscoveredSources(events);
+  const steps = getResearchProgress(events, running, Boolean(error));
+  const hasActivity = attempted || events.length > 0 || running;
+  const status = guideId
+    ? "Guide saved"
+    : error
+      ? "Research needs attention"
+      : running
+        ? latest
+          ? phaseLabels[latest.phase]
+          : "Submitting request"
+        : "Ready when you are";
+
   return (
-    <div className="page-container research-page">
-      <Link href="/" className="back-link">
-        <ArrowLeft size={13} />
-        Provider library
+    <div className={styles.page}>
+      <Link href="/" className={styles.back}>
+        <ArrowLeft size={15} />
+        Back to Explore
       </Link>
-      <h1>
-        A new provider.
-        <br />A clear way forward.
-      </h1>
-      <p className="page-lead">
-        Point AuthPilot at any app. The agent investigates its official OAuth
-        documentation and builds an actionable guide, with the evidence
-        attached.
-      </p>
-      <form className="research-form-panel" onSubmit={research}>
-        <label htmlFor="provider-query" className="field-label">
+      <header className={styles.heading}>
+        <div className={styles.providerHeading}>
+          <span className={styles.providerIcon}>
+            <ProviderIcon provider={displayQuery} size={31} />
+          </span>
+          <div>
+            <h1>
+              {running
+                ? "Researching"
+                : guideId
+                  ? "Research complete"
+                  : "Research a provider"}
+              {displayQuery ? (
+                <>
+                  <span className={styles.colon}>: </span>
+                  {displayQuery}
+                </>
+              ) : null}
+            </h1>
+            <p>
+              Investigate OAuth setup, requirements, and approval paths using
+              current documentation.
+            </p>
+          </div>
+        </div>
+        <div
+          className={`${styles.status} ${error ? styles.errorStatus : ""}`}
+          role="status"
+          aria-live="polite"
+        >
+          {running ? (
+            <LoaderCircle size={16} className={styles.spinner} />
+          ) : guideId ? (
+            <FileCheck2 size={16} />
+          ) : error ? (
+            <CircleAlert size={16} />
+          ) : (
+            <Search size={16} />
+          )}
+          {status}
+        </div>
+      </header>
+
+      <form className={styles.form} onSubmit={research}>
+        <label htmlFor="provider-query" className={styles.label}>
           Which provider are you integrating?
         </label>
-        <div className="research-input-row">
-          <div className="research-input">
-            <Globe2 size={18} />
+        <div className={styles.inputRow}>
+          <div className={styles.inputWrap}>
+            <Link2 size={18} />
             <input
               ref={inputRef}
               id="provider-query"
               name="provider"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="A provider name or website, e.g. notion.so"
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Provider name or website, e.g. Notion or notion.so"
               maxLength={160}
               disabled={running}
               aria-describedby="provider-help"
@@ -182,92 +315,95 @@ export function ResearchView() {
             disabled={running}
           >
             {running ? (
-              <LoaderCircle size={15} className="loading-icon" />
-            ) : (
-              <Compass size={16} />
-            )}{" "}
+              <LoaderCircle size={16} className={styles.spinner} />
+            ) : null}
             {running ? "Researching…" : "Research provider"}
-            {!running && <ArrowUpRight size={14} />}
+            {!running && <ArrowRight size={16} />}
           </button>
-        </div>
-        <p className="field-help" id="provider-help">
-          Use a public provider name or URL. Never enter API keys, client
-          secrets, or private account information.
-        </p>
-        <div className="example-providers">
-          <span>Try a new path</span>
-          {["Notion", "Linear", "Spotify"].map((name) => (
+          {running && (
             <button
               type="button"
-              key={name}
-              disabled={running}
-              onClick={() => {
-                setQuery(name);
-                inputRef.current?.focus();
-              }}
+              className="button"
+              onClick={() => abortRef.current?.abort()}
             >
-              {name}
+              <Square size={12} />
+              Cancel research
             </button>
-          ))}
+          )}
         </div>
-        <details open={readiness?.accessTokenRequired || undefined}>
-          <summary>
-            Deployment access token
-            {readiness?.accessTokenRequired
-              ? " (required for this deployment)"
-              : " (if required)"}
-          </summary>
-          <label htmlFor="research-token" className="sr-only">
-            Research access token
-          </label>
-          <input
-            className="token-input"
-            id="research-token"
-            type="password"
-            autoComplete="off"
-            placeholder="Access token supplied by the deployment owner"
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-            disabled={running}
-          />
-          <p className="field-help">
-            Used for this request only; never saved in your browser.
-          </p>
-        </details>
-        {readiness && (
-          <div className="readiness">
-            {readiness.researchReady ? (
-              <ShieldCheck size={13} />
+        <p className={styles.fieldHelp} id="provider-help">
+          Public names and websites only. Never enter API keys, client secrets,
+          or private account information.
+        </p>
+        <div className={styles.formFooter}>
+          <details
+            className={styles.accessDetails}
+            open={readiness?.accessTokenRequired || undefined}
+          >
+            <summary>
+              Deployment access token
+              {readiness?.accessTokenRequired
+                ? " (required)"
+                : " (if required)"}
+            </summary>
+            <label htmlFor="research-token" className="sr-only">
+              Research access token
+            </label>
+            <input
+              className={styles.tokenInput}
+              id="research-token"
+              type="password"
+              autoComplete="off"
+              placeholder="Token supplied by the deployment owner"
+              value={token}
+              onChange={(event) => setToken(event.target.value)}
+              disabled={running}
+            />
+            <p className={styles.fieldHelp}>
+              Used for this request only; never saved in your browser.
+            </p>
+          </details>
+          <div className={styles.readiness}>
+            {readiness ? (
+              <>
+                <ShieldCheck size={13} />
+                <span>
+                  {readiness.researchReady
+                    ? "Live research configured"
+                    : !readiness.apiKeyConfigured
+                      ? "Live research needs OPENAI_API_KEY in .env.local. Existing guides are ready to use."
+                      : "Durable database configuration is required before research can be saved."}
+                </span>
+              </>
+            ) : statusError ? (
+              <>
+                <CircleAlert size={13} />
+                <span>
+                  Could not check service readiness. Try the request or refresh
+                  this page.
+                </span>
+              </>
             ) : (
-              <CircleAlert size={13} />
+              <>
+                <LoaderCircle size={13} className={styles.spinner} />
+                <span>Checking research configuration</span>
+              </>
             )}
-            <span>
-              {readiness.researchReady
-                ? "Live research is configured. Requests use the deployment’s OpenAI account."
-                : !readiness.apiKeyConfigured
-                  ? "Live research needs OPENAI_API_KEY in .env.local. Existing guides are ready to use."
-                  : "Durable database configuration is required before research can be saved."}
-            </span>
           </div>
-        )}
-        {statusError && (
-          <p className="field-help">
-            Could not check service readiness. You can still try the request or
-            refresh the page.
-          </p>
-        )}
+        </div>
       </form>
+
       {error && (
-        <div className="notice error" style={{ marginTop: 20 }} role="alert">
-          <CircleAlert size={18} />
+        <div className={`notice error ${styles.alert}`} role="alert">
+          <CircleAlert size={19} />
           <div>
             <strong>Research needs your attention</strong>
             <p>{error}</p>
-            <p style={{ marginTop: 8 }}>
+            <p className={styles.recovery}>
               {error.includes("OPENAI_API_KEY") ? (
                 <Link href="/methodology#setup" className="source-reference">
                   See local setup instructions
-                  <ArrowRight size={11} />
+                  <ArrowRight size={12} />
                 </Link>
               ) : (
                 "Your input is preserved. Resolve the issue and select Research provider to retry."
@@ -276,143 +412,233 @@ export function ResearchView() {
           </div>
         </div>
       )}
-      {(events.length > 0 || running) && (
-        <section className="research-journal" aria-labelledby="journal-title">
-          <div className="journal-header">
-            <h2 id="journal-title">
-              {running ? (
-                <LoaderCircle className="loading-icon" size={18} />
-              ) : guideId ? (
-                <FileCheck2 size={18} />
-              ) : (
-                <Search size={18} />
-              )}
-              Research journal
-            </h2>
-            {running ? (
-              <button
-                className="button button-small"
-                onClick={() => abortRef.current?.abort()}
-              >
-                <Square size={11} />
-                Cancel research
-              </button>
-            ) : (
-              <span className="evidence-tag">
-                {guideId ? "Guide saved" : "Research stopped"}
-              </span>
-            )}
+      {guideId && (
+        <section className={styles.complete} aria-label="Research complete">
+          <span className={styles.completeIcon}>
+            <FileCheck2 size={23} />
+          </span>
+          <div>
+            <h2>Your guide is ready.</h2>
+            <p>
+              Saved with its evidence and a persistent URL. Review the sources
+              before you configure your app.
+            </p>
           </div>
-          <p className="journal-intro">
-            Events below come from the live tool and application. There are no
-            simulated steps or estimated percentages.
-          </p>
-          <ol
-            className="journal-events"
-            aria-live="polite"
-            aria-relevant="additions"
+          <Link
+            href={`/guides/${encodeURIComponent(guideId)}`}
+            className="button button-primary"
           >
-            {events.map((event, i) => (
+            Open your guide
+            <ArrowRight size={16} />
+          </Link>
+        </section>
+      )}
+
+      <div className={styles.researchGrid}>
+        <section
+          className={styles.timelinePanel}
+          aria-labelledby="workflow-heading"
+        >
+          <div className={styles.panelLabel}>
+            <h2 id="workflow-heading">
+              {running
+                ? "Research in progress"
+                : guideId
+                  ? "Research completed"
+                  : error && hasActivity
+                    ? "Research interrupted"
+                    : "The research workflow"}
+            </h2>
+            <span>
+              {hasActivity
+                ? "Based on observed events"
+                : "Starts when you submit"}
+            </span>
+          </div>
+          <ol className={styles.timeline} aria-label="Research progress">
+            {steps.map((step) => (
               <li
-                key={`${event.timestamp}-${i}`}
-                className={`journal-event ${event.phase === "error" ? "event-error" : ""}`}
+                key={step.id}
+                className={`${styles.step} ${styles[step.state]}`}
+                data-state={step.state}
               >
-                {event.phase === "error" ? (
-                  <CircleAlert size={15} />
-                ) : (
-                  <Check size={15} />
-                )}
-                <div>
-                  <p>{event.message}</p>
-                  {event.url && (
-                    <a
-                      href={event.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {event.url}
-                      <ExternalLink
-                        size={9}
-                        style={{ display: "inline", marginLeft: 4 }}
-                      />
-                    </a>
+                <span className={styles.stepIcon} aria-hidden="true">
+                  {step.state === "completed" ? (
+                    <Check size={15} />
+                  ) : step.state === "active" ? (
+                    <LoaderCircle size={23} className={styles.spinner} />
+                  ) : step.state === "failed" ? (
+                    <CircleAlert size={23} />
+                  ) : (
+                    <Circle size={23} />
                   )}
+                </span>
+                <div className={styles.stepText}>
+                  <div>
+                    <h3>{step.title}</h3>
+                    <span>{stateLabels[step.state]}</span>
+                  </div>
+                  <p>{step.description}</p>
                 </div>
-                <time dateTime={event.timestamp}>
-                  {new Date(event.timestamp).toLocaleTimeString("en-GB", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                  })}
-                </time>
               </li>
             ))}
           </ol>
-          {guideId && (
-            <div className="research-complete">
-              <p>Your guide has a persistent, shareable URL.</p>
-              <Link
-                className="button button-primary"
-                href={`/guides/${guideId}`}
+          <p className={styles.eventNote}>
+            Setup and approval findings are organized together during guide
+            generation. AuthPilot does not access provider accounts or test an
+            OAuth setup.
+          </p>
+        </section>
+
+        <section
+          className={styles.evidencePanel}
+          aria-labelledby="sources-heading"
+        >
+          <div className={styles.evidenceHeader}>
+            <h2 id="sources-heading">
+              <FileSearch size={18} />
+              Documentation found
+            </h2>
+            <span className={styles.sourceCount} aria-live="polite">
+              {sources.length} {sources.length === 1 ? "source" : "sources"}
+            </span>
+          </div>
+          {sources.length ? (
+            <>
+              <ul
+                className={styles.sourceList}
+                aria-label="Discovered documentation"
               >
-                Open your guide
-                <ArrowRight size={15} />
-              </Link>
+                {sources.map((source) => (
+                  <li key={source.url}>
+                    <a
+                      href={source.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Open source: ${source.title}`}
+                      className={styles.sourceLink}
+                    >
+                      <span className={styles.sourceIcon}>
+                        {source.classification === "Documentation candidate" ? (
+                          <FileText size={21} />
+                        ) : (
+                          <Globe2 size={21} />
+                        )}
+                      </span>
+                      <div className={styles.sourceText}>
+                        <h3>{source.title}</h3>
+                        <span className={styles.sourceDomain}>
+                          {source.domain}
+                        </span>
+                        <span className={styles.sourceUrl}>{source.url}</span>
+                        <span className={styles.classification}>
+                          {source.classification}
+                        </span>
+                      </div>
+                      <ArrowUpRight size={16} className={styles.sourceArrow} />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <p className={styles.sourceFootnote}>
+                These links were returned by web search. Retrieval alone does
+                not verify a requirement; inspect the citations and evidence
+                labels in the completed guide.
+              </p>
+            </>
+          ) : (
+            <div className={styles.sourceEmpty}>
+              <FileSearch size={29} />
+              <h3>
+                {running
+                  ? "Waiting for documentation"
+                  : "The evidence will appear here."}
+              </h3>
+              <p>
+                {running
+                  ? "Sources appear when the web-search tool returns them. The agent has not returned a source yet."
+                  : "Start a real research request to see the returned source titles, domains, and links."}
+              </p>
             </div>
           )}
         </section>
-      )}
-      {!running && !events.length && (
-        <section
-          className="research-flow-explainer"
-          aria-label="The research process"
-        >
-          <div>
+      </div>
+
+      {hasActivity && (
+        <section className={styles.journal} aria-labelledby="journal-title">
+          <div className={styles.journalHeading}>
+            <h2 id="journal-title">Research journal</h2>
             <span>
-              <Search size={20} />
+              {events.length} observed{" "}
+              {events.length === 1 ? "event" : "events"}
             </span>
-            <h3>Find the official story</h3>
-            <p>
-              Real web search investigates provider docs, app registration, and
-              production requirements.
-            </p>
           </div>
-          <div>
-            <span>
-              <ShieldCheck size={20} />
-            </span>
-            <h3>Keep the evidence attached</h3>
-            <p>
-              Requirements link to retrieved sources. Estimates and missing
-              information are labeled.
-            </p>
-          </div>
-          <div>
-            <span>
-              <FileCheck2 size={20} />
-            </span>
-            <h3>Leave with a plan</h3>
-            <p>
-              Get a saved guide, practical checklist, approval blockers, and
-              Markdown you can take with you.
-            </p>
-          </div>
+          <details className={styles.journalDetails}>
+            <summary>View observed events</summary>
+            {events.length ? (
+              <ol
+                className={`journal-events ${styles.journalEvents}`}
+                data-testid="research-events"
+              >
+                {events.map((event, index) => {
+                  const sourceUrl = publicEvidenceUrl(event.url);
+                  return (
+                    <li
+                      key={`${event.timestamp}-${index}`}
+                      className={styles.journalEvent}
+                    >
+                      <span>
+                        {event.phase === "error" ? (
+                          <CircleAlert size={14} />
+                        ) : (
+                          <Check size={14} />
+                        )}
+                      </span>
+                      <div>
+                        <p>{event.message}</p>
+                        {sourceUrl && (
+                          <a
+                            href={sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {sourceUrl}
+                            <ExternalLink size={10} />
+                          </a>
+                        )}
+                      </div>
+                      <time dateTime={event.timestamp}>
+                        {new Date(event.timestamp).toLocaleTimeString("en-GB", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                        })}
+                      </time>
+                    </li>
+                  );
+                })}
+              </ol>
+            ) : (
+              <p className={styles.noEvents}>
+                {running
+                  ? "The request is in flight. Waiting for the first server event."
+                  : "No research events were returned. Resolve the request error and retry."}
+              </p>
+            )}
+          </details>
         </section>
       )}
-      <section className="research-notice">
-        <h3>
-          <LockKeyhole size={14} />
-          Research, with boundaries.
-        </h3>
+
+      <section className={styles.boundaries}>
+        <LockKeyhole size={16} />
         <p>
-          The agent reads public documentation. It cannot sign into your
-          account, register an app, handle your secrets, or get provider
-          approval. Research may take a few minutes and uses a paid API when
-          configured. If official evidence is unavailable, the guide will say
-          so.{" "}
-          <Link href="/methodology" className="source-reference">
+          <strong>Research, with clear boundaries.</strong> The agent reads
+          public documentation. You sign in, choose scopes, store credentials,
+          and run the integration. Provider approval stays with the provider.
+          Research uses the deployment’s paid API and can take a few minutes.{" "}
+          <Link href="/methodology">
             How it works
-            <ArrowUpRight size={10} />
+            <ArrowUpRight size={11} />
           </Link>
         </p>
       </section>

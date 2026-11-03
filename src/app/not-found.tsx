@@ -10,7 +10,7 @@ export default function NotFound() {
         deployment. Find a provider in the library or research a new one.
       </p>
       <div className="error-actions">
-        <Link className="button button-primary" href="/">
+        <Link className="button button-primary" href="/guides">
           Open provider library
         </Link>
         <Link className="button" href="/research">

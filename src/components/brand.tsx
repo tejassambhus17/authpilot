@@ -1,25 +1,20 @@
-import { Github, Globe2 } from "lucide-react";
+import { Github, Globe2, Hexagon, ShieldCheck } from "lucide-react";
+import Image from "next/image";
 
 export function BrandMark({ size = 30 }: { size?: number }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 32 32"
-      fill="none"
+    <span
+      className="brand-mark"
+      style={{ width: size, height: size }}
       aria-hidden="true"
     >
-      <rect width="32" height="32" rx="9" fill="currentColor" />
-      <path
-        d="m8 23 8-15 8 15M11.2 17h9.6"
-        stroke="var(--brand-mark-ink, #fff)"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+      <Hexagon size={size} fill="currentColor" strokeWidth={1.5} />
+      <ShieldCheck
+        className="brand-mark-shield"
+        size={Math.round(size * 0.53)}
+        strokeWidth={1.9}
       />
-      <circle cx="16" cy="17" r="2.8" fill="var(--brand-mark-ink, #fff)" />
-      <circle cx="16" cy="17" r="1.1" fill="currentColor" />
-    </svg>
+    </span>
   );
 }
 
@@ -31,6 +26,17 @@ export function ProviderIcon({
   size?: number;
 }) {
   const name = provider.toLowerCase();
+  if (name === "notion")
+    return (
+      <Image
+        src="/provider-icons/notion.ico"
+        alt=""
+        width={size}
+        height={size}
+        unoptimized
+        aria-hidden="true"
+      />
+    );
   if (name === "github")
     return <Github size={size} strokeWidth={1.7} aria-hidden="true" />;
   if (name === "google")
