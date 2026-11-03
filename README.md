@@ -1,6 +1,6 @@
 # AuthPilot
 
-**Hosted URL:** not deployed; push and deployment await the owner's confirmation. A local preview is not a hosted submission.
+**Hosted URL:** [authpilot-navy.vercel.app](https://authpilot-navy.vercel.app). Deployed with the owner's authorization on 4 November 2026 (Asia/Calcutta). See [production validation](docs/production-validation.md) for actual checks and remaining limits. Live research requires the private deployment access token; reading and sharing guides is public.
 
 [Demonstration script](#demonstration-script) · [Reliability follow-up](docs/reliability-validation.md) · [Final validation](docs/final-validation.md) · [Research-quality benchmark](docs/research-quality.md) · [Deployment readiness](docs/deployment-readiness.md)
 
@@ -152,7 +152,7 @@ Allow **2–3 minutes of narration**; a real research request may take longer. K
 5. Run the configuration checker in the intended environment. Open `/api/health`, then verify real model access, remote database connectivity, cold-start persistence, unfamiliar-provider research, and a fresh-session share. Health reports configuration only, with `connectivityVerified: false`.
 6. Add the actual hosted URL at the top of this README only after it exists and has been tested. Follow [deployment readiness](docs/deployment-readiness.md) and retain any unexecuted checks.
 
-No external deployment was created by this repository-only build. A working hosted submission link requires the operator's Vercel and database setup.
+The current hosted deployment was created through the Vercel CLI after owner authorization and uses Turso for durable storage. GitHub auto-deployment is not connected. Fresh installations still require their own Vercel project, server secrets and database. See [production validation](docs/production-validation.md) for the deployed commit, real checks, retained failure and credential-rotation requirements.
 
 ## Trade-offs and limits
 

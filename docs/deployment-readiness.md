@@ -1,5 +1,7 @@
 # Deployment readiness
 
+**4 November 2026 update:** the owner authorized deployment. The public production URL is [authpilot-navy.vercel.app](https://authpilot-navy.vercel.app), with remote Turso storage and server-only production secrets. Current checks and retained failures are in [production validation](production-validation.md). The 3 November pre-deployment assessment below is preserved as history and no longer describes the current credential/deployment state.
+
 Checked locally on **3 November 2026**. This pass did not push, create a Vercel project, deploy, contact a remote database, or verify a hosted URL. Those actions require the owner's confirmation. Local configuration checks are not production smoke tests.
 
 ## Reproduce the configuration check
