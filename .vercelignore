@@ -1,0 +1,13 @@
+# Never upload local credentials, databases, runtimes, or review artifacts.
+.env*
+!.env.example
+.runtime/
+data/
+*.db*
+.impeccable/review/
+tmp/
+test-results/
+playwright-report/
+.next/
+node_modules/
+*.tsbuildinfo
